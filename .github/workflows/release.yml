@@ -30,13 +30,13 @@ jobs:
       - name: Build the zip
         run: |
           # git archive leaves out everything marked export-ignore in .gitattributes
-          git archive --format=zip --prefix=Fostbraedr/ -o "Fostbraedr-${{ steps.version.outputs.version }}.zip" HEAD
-          unzip -l "Fostbraedr-${{ steps.version.outputs.version }}.zip"
+          git archive --format=zip --prefix=Fostbraedr/ -o "Fostbraedr-${{ steps.version.outputs.version }}-forever.zip" HEAD
+          unzip -l "Fostbraedr-${{ steps.version.outputs.version }}-forever.zip"
 
       - name: Publish the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "$GITHUB_REF_NAME" "Fostbraedr-${{ steps.version.outputs.version }}.zip" \
+          gh release create "$GITHUB_REF_NAME" "Fostbraedr-${{ steps.version.outputs.version }}-forever.zip" \
             --title "Fostbraedr ${{ steps.version.outputs.version }}" \
-            --notes "Download **Fostbraedr-${{ steps.version.outputs.version }}.zip** below and unpack it into \`World of Warcraft\\_forever_\\Interface\\AddOns\\\` (replace the old Fostbraedr folder). Then restart WoW."
+            --notes "Download **Fostbraedr-${{ steps.version.outputs.version }}-forever.zip** below and unpack it into \`World of Warcraft\\_forever_\\Interface\\AddOns\\\` (replace the old Fostbraedr folder). Then restart WoW."

@@ -4,12 +4,16 @@ A family addon for **World of Warcraft: Forever**: a shared chronicle and a riva
 
 ## Install (for players)
 
-1. Open **https://github.com/alxric/fostbraedr/releases/latest** and download `Fostbraedr-x.y.z.zip`.
+1. Open **https://github.com/alxric/fostbraedr/releases/latest** and download `Fostbraedr-x.y.z-forever.zip`.
 2. Unpack it into `World of Warcraft\_forever_\Interface\AddOns\`, so you get
    `...\AddOns\Fostbraedr\Fostbraedr_Forever.toc`. Replace the old `Fostbraedr` folder when updating.
 3. Restart WoW.
 
 When a brother has a newer version, the addon tells you in game.
+
+**Automatic updates:** install [WowUp](https://wowup.io) (2.24.1 or newer supports Forever), choose
+**Get Addons → Install from URL**, paste `https://github.com/alxric/fostbraedr`, and turn on auto-update for
+Fostbraedr. WowUp then installs each new release by itself.
 
 ## Install (for development)
 
