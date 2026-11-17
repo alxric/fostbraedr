@@ -390,6 +390,11 @@ commands.loottest = function()
     if not ok then ns.Print("Loot test failed: %s", tostring(err)) end
 end
 
+commands.ejtest = function(rest)
+    local ok, err = pcall(ns.EJTest, rest)
+    if not ok then ns.Print("EJ test failed: %s", tostring(err)) end
+end
+
 commands.lootquality = function(rest)
     local q = tonumber(rest)
     if q and q >= 0 and q <= 7 then
