@@ -68,6 +68,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost ejtest [dungeon]`: diagnostic, shows whether the Adventure Guide's loot data is readable
 - `/fost dbtest [dungeon]`: diagnostic, shows whether the ForeverDB data addon is installed and what's in it
+- `/fost dump Name[.key]`, `/fost globals text`: diagnostics, show the structure of other addons' data tables
 - `/fost version`
 
 ## Custom poke sound

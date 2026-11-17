@@ -400,6 +400,16 @@ commands.dbtest = function(rest)
     if not ok then ns.Print("DB test failed: %s", tostring(err)) end
 end
 
+commands.dump = function(rest)
+    local ok, err = pcall(ns.Dump, rest)
+    if not ok then ns.Print("Dump failed: %s", tostring(err)) end
+end
+
+commands.globals = function(rest)
+    local ok, err = pcall(ns.Globals, rest)
+    if not ok then ns.Print("Globals failed: %s", tostring(err)) end
+end
+
 commands.lootquality = function(rest)
     local q = tonumber(rest)
     if q and q >= 0 and q <= 7 then

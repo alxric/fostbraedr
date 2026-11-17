@@ -209,6 +209,7 @@ end
 
 function ns.LoadForeverDB()
     if type(ForeverDB) == "table" then return ForeverDB end
+    if type(ForeverDB_DB) == "table" then return ForeverDB_DB end -- the foreverdb.net addon's data table?
     if C_AddOns and C_AddOns.LoadAddOn then
         local ok, loaded, reason = pcall(C_AddOns.LoadAddOn, "ForeverDB")
         if ok and type(ForeverDB) == "table" then return ForeverDB end
@@ -253,7 +254,7 @@ local function DBTestBody(Out, dungeon)
         if #globals == 0 then Out("  none") end
         return
     end
-    Out("ForeverDB loaded. meta: %s", Describe(db.meta))
+    Out("Data table: %s. meta: %s", db == ForeverDB_DB and "ForeverDB_DB" or "ForeverDB", Describe(db.meta))
     Out("")
     Out("Tables:")
     local names = {}
@@ -317,3 +318,55 @@ local function DBTestBody(Out, dungeon)
 end
 
 function ns.DBTest(dungeon) RunInWindow("ForeverDB test", DBTestBody, dungeon) end
+
+-------------------------------------------------------------------------------
+-- /fost dump <GlobalName>[.key.key]: structure of any global table, two levels
+-- deep, with counts and sample entries. /fost globals <text>: every global whose
+-- name contains <text>, with type and size.
+-------------------------------------------------------------------------------
+local function Resolve(path)
+    local v = _G
+    for part in path:gmatch("[^%.]+") do
+        if type(v) ~= "table" then return nil end
+        v = v[tonumber(part) or part]
+        if v == nil and tonumber(part) then return nil end
+    end
+    return v
+end
+
+local function DumpBody(Out, path)
+    if not path or path == "" then return Out("Usage: /fost dump GlobalName (or GlobalName.key.key)") end
+    local v = Resolve(path)
+    if type(v) ~= "table" then return Out("%s is %s: %s", path, type(v), Describe(v)) end
+    local keys = {}
+    for k in pairs(v) do keys[#keys + 1] = k end
+    table.sort(keys, function(a, b) return tostring(a) < tostring(b) end)
+    Out("%s: table with %d keys", path, #keys)
+    for i, k in ipairs(keys) do
+        if i > 120 then Out("  ... %d more keys", #keys - 120) break end
+        local val = v[k]
+        if type(val) == "table" then
+            local sk, sv = next(val)
+            Out("  %s: table, %d entries, e.g. [%s] = %s", tostring(k), Count(val), tostring(sk), Describe(sv))
+        else
+            Out("  %s = %s", tostring(k), Describe(val))
+        end
+    end
+end
+
+local function GlobalsBody(Out, text)
+    if not text or text == "" then return Out("Usage: /fost globals <part of a name>") end
+    text = text:lower()
+    local list = {}
+    for k, v in pairs(_G) do
+        if type(k) == "string" and k:lower():find(text, 1, true) then
+            list[#list + 1] = ("%s (%s%s)"):format(k, type(v), type(v) == "table" and (", " .. Count(v) .. " keys") or "")
+        end
+    end
+    table.sort(list)
+    Out("%d globals containing '%s':", #list, text)
+    for _, l in ipairs(list) do Out("  %s", l) end
+end
+
+function ns.Dump(path) RunInWindow("Dump " .. tostring(path), DumpBody, path) end
+function ns.Globals(text) RunInWindow("Globals: " .. tostring(text), GlobalsBody, text) end
