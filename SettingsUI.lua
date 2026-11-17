@@ -105,6 +105,7 @@ function ns.BuildSettingsTab(panel)
     local reset = T.Button(left, "Reset window position", 160, 24)
     Place(reset, left, -298)
     reset:SetScript("OnClick", function() ns.ResetWindow() end)
+    Hint(left, ("Fostbraedr %s  \194\183  updates: %s"):format(tostring(ns.version), ns.Sync.DOWNLOAD_URL), -334)
 
     ---------------------------------------------------------------------------
     -- You

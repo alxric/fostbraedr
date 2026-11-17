@@ -21,7 +21,7 @@ local BATCH_BYTES = 1200        -- serialized entries per E message
 local heard = {}                -- [name] = GetTime() of last message
 local wentOffline = {}          -- [name] = GetTime() they said bye / were found offline
 local lastWhisper = {}          -- [name] = GetTime() we last whispered them
-local warnedNewer = {}
+local warnedNewer = {}          -- [version] = true: nudged about this version this session
 
 local Sync = {}
 ns.Sync = Sync
@@ -291,6 +291,38 @@ local function LinkNewChar(sender, acct)
     end
 end
 
+-- Compare "0.10.2" style versions: -1, 0, 1, or nil if either isn't numeric (e.g. "dev").
+function Sync.CompareVersions(a, b)
+    if type(a) ~= "string" or type(b) ~= "string" then return nil end
+    if not a:match("^%d+[%.%d]*$") or not b:match("^%d+[%.%d]*$") then return nil end
+    local pa, pb = {}, {}
+    for n in a:gmatch("%d+") do pa[#pa + 1] = tonumber(n) end
+    for n in b:gmatch("%d+") do pb[#pb + 1] = tonumber(n) end
+    for i = 1, math.max(#pa, #pb) do
+        local x, y = pa[i] or 0, pb[i] or 0
+        if x ~= y then return x < y and -1 or 1 end
+    end
+    return 0
+end
+
+Sync.DOWNLOAD_URL = "github.com/alxric/fostbraedr/releases/latest"
+
+-- Nudge once per newer version per session when a brother runs a newer addon.
+function Sync.CheckVersion(name, theirVersion, theirSync)
+    local cmp = Sync.CompareVersions(ns.version, theirVersion)
+    local newer = cmp == -1 or (cmp == nil and tonumber(theirSync) and theirSync > SYNC_VERSION)
+    if not newer then return end
+    local key = tostring(theirVersion)
+    if warnedNewer[key] then return end
+    warnedNewer[key] = true
+    ns.Notify(("Update available: Fostbraedr %s"):format(key), "info", {
+        detail = ("%s has it, you have %s"):format(ns.People.DisplayName(name), tostring(ns.version)),
+        force = true,
+    })
+    ns.Print("%s has Fostbraedr %s, you have %s. Download: %s", ns.People.DisplayName(name), key,
+        tostring(ns.version), Sync.DOWNLOAD_URL)
+end
+
 -- Store account info before From() so the "online" notice already uses the person's name.
 function Sync.LearnAccount(sender, acct)
     local pre = ns.ResolveSender(sender)
@@ -303,10 +335,7 @@ Comm.On("HI", function(msg, sender)
     local name = From(sender)
     if not name then return end
     Sync.ApplyStatus(name, msg.st, type(msg.av) == "string" and msg.av or nil)
-    if tonumber(msg.sv) and msg.sv > SYNC_VERSION and not warnedNewer[name] then
-        warnedNewer[name] = true
-        ns.Print("%s has a newer Fostbraedr (%s). Please update yours.", ns.People.DisplayName(name), tostring(msg.av))
-    end
+    Sync.CheckVersion(name, msg.av, msg.sv)
     local sent = Sync.SendMissing(name, msg.hw)
     if sent > 0 then ns.Print("Sending %d chronicle entries to %s.", sent, ns.People.DisplayName(name)) end
     if not msg.r then Sync.Hello(name, true) end

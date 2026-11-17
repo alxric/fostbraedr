@@ -2,15 +2,30 @@
 
 A family addon for **World of Warcraft: Forever**: a shared chronicle and a rivalry tracker. Each brother runs his own copy, and the copies keep their data in sync.
 
-## Install
+## Install (for players)
+
+1. Open **https://github.com/alxric/fostbraedr/releases/latest** and download `Fostbraedr-x.y.z.zip`.
+2. Unpack it into `World of Warcraft\_forever_\Interface\AddOns\`, so you get
+   `...\AddOns\Fostbraedr\Fostbraedr_Forever.toc`. Replace the old `Fostbraedr` folder when updating.
+3. Restart WoW.
+
+When a brother has a newer version, the addon tells you in game.
+
+## Install (for development)
 
 Clone this repo into your AddOns folder. The folder **must** be named `Fostbraedr`:
 
 ```
-World of Warcraft\_forever_\Interface\AddOns\Fostbraedr\
+git clone https://github.com/alxric/fostbraedr.git Fostbraedr
 ```
 
 Data is stored in `WTF\...\SavedVariables\Fostbraedr.lua` (outside the repo).
+
+## Releasing
+
+Bump `## Version:` in `Fostbraedr_Forever.toc`, commit, then tag that commit with the same version and push
+the tag, e.g. `git tag v0.2.0 && git push origin v0.2.0`. GitHub Actions builds the zip (without `tests/`)
+and publishes the release. It refuses to release if the tag and the `.toc` version differ.
 
 ## Settings
 
