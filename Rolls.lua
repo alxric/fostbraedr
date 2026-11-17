@@ -149,7 +149,7 @@ function ns.ScanLootHistory(log)
                         local mine = false
                         for _, r in ipairs(type(rolls) == "table" and rolls or {}) do
                             if r.isSelf == true and type(r.roll) == "number" then
-                                ns.AddEntry("roll", { roll = r.roll, rollType = ns.RollTypeFromState(r.state), link = link, boss = boss })
+                                ns.AddEntry("roll", { roll = r.roll, rollType = ns.RollTypeFromState(r.state), link = link, boss = boss, src = "history" })
                                 added = added + 1
                                 mine = true
                                 log("  %s: recorded our roll %d (%s)", what, r.roll, tostring(ns.RollTypeFromState(r.state)))
@@ -160,7 +160,7 @@ function ns.ScanLootHistory(log)
                             if RecentWinFor(link) then
                                 log("  %s: we won it (already recorded earlier)", what)
                             else
-                                ns.AddEntry("rollwin", { link = link, boss = boss })
+                                ns.AddEntry("rollwin", { link = link, boss = boss, src = "history" })
                                 added = added + 1
                                 log("  %s: we won it", what)
                             end

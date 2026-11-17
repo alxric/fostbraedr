@@ -29,12 +29,15 @@ remote(11, "loot", { quality = 1, mount = true, link = "mount" })
 local old = { author = "Thorgrim Stormfjord", n = 8, time = env.GetServerTime() - 20 * 86400, kind = "death" }
 assert(ns.Sync.Accept(old))
 
+-- double wins: an old chat-recorded win (no boss) plus the same win from the Loot History
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10777::::|h[Arachnid Gloves]|h|r" })
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10777::::|h[Arachnid Gloves]|h|r", boss = "Tuten'kash", src = "history" })
 local ME, BRO = ns.People.GroupKey("Ragnar Stormfjord"), ns.People.GroupKey("Thorgrim Stormfjord")
 local stats = ns.ComputeRivalry(ns.WeekStart(0), nil)
 local me, bro = stats[ME], stats[BRO]
 print("me", me.rolls, me.rollSum, me.luck, me.rollWins, me.deaths, me.quests)
 print("bro", bro.rolls, bro.luck, bro.deaths, bro.quests, bro.gold, bro.level)
-assert(me.rolls == 3 and me.rollSum == 150 and me.luck == 50 and me.rollWins == 1 and me.deaths == 1 and me.quests == 1)
+assert(me.rolls == 3 and me.rollSum == 150 and me.luck == 50 and me.rollWins == 2 and me.deaths == 1 and me.quests == 1)
 assert(bro.loot == 2, "Epics should count the epic and the mount only, got " .. bro.loot)
 assert(bro.rolls == 3 and bro.luck == 20 and bro.deaths == 2 and bro.quests == 5 and bro.level == 12)
 local aw = ns.ComputeAwards(stats)

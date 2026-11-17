@@ -27,6 +27,26 @@ local function NewStats()
              rolls = 0, rollSum = 0, rollWins = 0 }
 end
 
+local function ItemID(link)
+    return type(link) == "string" and link:match("item:(%d+)") or nil
+end
+
+local function IsHistoryWin(e)
+    return e.src == "history" or e.boss ~= nil
+end
+
+-- An old chat-recorded win that the Loot History also recorded (same author and
+-- item within a day)?
+local function DuplicateChatWin(e, historyWins)
+    if IsHistoryWin(e) then return false end
+    local id = ItemID(e.link)
+    local times = id and historyWins[e.author .. "|" .. id]
+    for _, t in ipairs(times or {}) do
+        if math.abs(t - (e.time or 0)) < 24 * 3600 then return true end
+    end
+    return false
+end
+
 -- Stats per person for entries with from <= time < to (nil = unbounded).
 -- A person's characters are combined (see People.lua); characters not linked to
 -- anyone count on their own. Returns stats keyed by People.GroupKey (each with
@@ -44,6 +64,19 @@ function ns.ComputeRivalry(from, to)
         end
         return s
     end
+    -- Wins from the Loot History (they carry a boss) by author and item, so the
+    -- same wins recorded from chat by versions before 0.3.1 aren't counted twice.
+    local historyWins = {}
+    for _, e in pairs(ns.db.entries) do
+        if e.kind == "rollwin" and IsHistoryWin(e) then
+            local id = ItemID(e.link)
+            if id then
+                local key = e.author .. "|" .. id
+                historyWins[key] = historyWins[key] or {}
+                table.insert(historyWins[key], e.time or 0)
+            end
+        end
+    end
     local function Level(char, level)
         local s = S(char)
         if type(level) == "number" and (s.level or 0) < level then s.level = level end
@@ -57,7 +90,8 @@ function ns.ComputeRivalry(from, to)
             elseif k == "boss" then S(e.author).bosses = S(e.author).bosses + 1
             elseif k == "loot" then
                 if ns.IsEpicLoot(e) then S(e.author).loot = S(e.author).loot + 1 end
-            elseif k == "rollwin" then S(e.author).rollWins = S(e.author).rollWins + 1
+            elseif k == "rollwin" then
+                if not DuplicateChatWin(e, historyWins) then S(e.author).rollWins = S(e.author).rollWins + 1 end
             elseif k == "roll" and type(e.roll) == "number" then
                 local s = S(e.author)
                 s.rolls, s.rollSum = s.rolls + 1, s.rollSum + e.roll
