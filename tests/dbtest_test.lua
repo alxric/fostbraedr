@@ -7,9 +7,18 @@ local ch = assert(loadfile("./Diagnostics.lua")); setfenv(ch, env); ch("Fostbrae
 local shown = {}
 ns.ShowTextWindow = function(title, text) shown[#shown + 1] = text print("[window: " .. title .. "]\n" .. text) end
 
-env.C_AddOns = { LoadAddOn = function() return false, "MISSING" end }
+env.C_AddOns = {
+    LoadAddOn = function() return true end, -- "loaded", but no ForeverDB global (what happened in game)
+    GetNumAddOns = function() return 2 end,
+    GetAddOnInfo = function(i) if i == 1 then return "ForeverDB", "ForeverDB", "", true, nil end return "Fostbraedr", "Fostbraedr", "", true, nil end,
+    IsAddOnLoaded = function(i) return i == 1 end,
+    IsAddOnLoadOnDemand = function(i) return i == 1 end,
+}
+env.ForeverDBData = {}
 env.SlashCmdList.FOSTBRAEDR("dbtest")
-assert(shown[1]:find("isn't available") and shown[1]:find("MISSING"), "missing ForeverDB reported")
+assert(shown[1]:find("No ForeverDB data table") and shown[1]:find("ForeverDB %(title"), "installed addon listed")
+assert(shown[1]:find("ForeverDBData %(table%)"), "candidate global listed")
+env.ForeverDBData = nil
 
 env.C_AddOns = { LoadAddOn = function()
     env.ForeverDB = {

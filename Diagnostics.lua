@@ -221,7 +221,37 @@ local function DBTestBody(Out, dungeon)
     dungeon = (dungeon and dungeon ~= "") and dungeon:lower() or "scarlet monastery"
     local db, why = ns.LoadForeverDB()
     if not db then
-        return Out("ForeverDB isn't available (%s). Install the 'ForeverDB' addon (CurseForge) and make sure it's enabled.", tostring(why))
+        Out("No ForeverDB data table found (LoadAddOn said: %s).", tostring(why))
+        -- what's actually installed / defined?
+        Out("")
+        Out("Installed addons with 'forever' or 'db' in their folder name:")
+        local A = C_AddOns
+        local n = A and A.GetNumAddOns and A.GetNumAddOns() or 0
+        for i = 1, n do
+            local name, title, _, loadable, reason = A.GetAddOnInfo(i)
+            local lname = tostring(name):lower()
+            if lname:find("forever", 1, true) or lname:find("db", 1, true) then
+                local loaded = A.IsAddOnLoaded and A.IsAddOnLoaded(i)
+                local lod = A.IsAddOnLoadOnDemand and A.IsAddOnLoadOnDemand(i)
+                Out("  %s (title: %s) loaded=%s loadOnDemand=%s loadable=%s reason=%s", tostring(name),
+                    tostring(title), tostring(loaded), tostring(lod), tostring(loadable), tostring(reason))
+            end
+        end
+        Out("")
+        Out("Global names containing 'forever' (other than our own):")
+        local globals = {}
+        for k, v in pairs(_G) do
+            if type(k) == "string" and k:lower():find("forever", 1, true) and not k:find("^Fostbraedr") then
+                globals[#globals + 1] = ("%s (%s)"):format(k, type(v))
+            end
+        end
+        table.sort(globals)
+        for i, g in ipairs(globals) do
+            if i > 60 then Out("  ... %d more", #globals - 60) break end
+            Out("  %s", g)
+        end
+        if #globals == 0 then Out("  none") end
+        return
     end
     Out("ForeverDB loaded. meta: %s", Describe(db.meta))
     Out("")
