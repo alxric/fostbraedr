@@ -155,8 +155,24 @@ local function EntryToast(e)
     end
 end
 
+-- Were we in on this boss kill? (grouped with the brother, or we recorded it too)
+local function WeWereThere(e)
+    local myKey = ns.me and ns.NameKey(ns.me)
+    for _, c in ipairs(e.with or {}) do
+        if ns.NameKey(c) == myKey then return true end
+    end
+    for _, mine in pairs(ns.db.entries) do
+        if mine.kind == "boss" and mine.author == ns.me and mine.name == e.name
+            and math.abs((mine.time or 0) - (e.time or 0)) <= 10 * 60 then
+            return true
+        end
+    end
+    return false
+end
+
 ns.Listen("ENTRY_ADDED", function(e, fromPeer)
     if not fromPeer or not e.time or GetServerTime() - e.time > RECENT then return end
+    if e.kind == "boss" and WeWereThere(e) then return end
     local text, detail = EntryToast(e)
     if not text then return end
     local icon

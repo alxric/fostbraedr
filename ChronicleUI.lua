@@ -16,9 +16,30 @@ local function InZone(e)
 end
 
 -- Builds display rows (newest first) with running totals worked out oldest first.
+local BOSS_MERGE_WINDOW = 10 * 60
+
+-- Add the entry's author and the brothers it was grouped with, once per person.
+local function AddParticipants(row, e)
+    local function Add(char, display)
+        local key = ns.People.GroupKey(char)
+        if row.seen[key] then return end
+        row.seen[key] = true
+        row.participants[#row.participants + 1] = display
+    end
+    Add(e.author, ns.People.DisplayName(e.author))
+    for _, c in ipairs(e.with or {}) do Add(c, ns.People.ShortName(c)) end
+end
+
+-- "A", "A and B", "A, B and C"
+local function JoinNames(list)
+    if #list <= 1 then return list[1] or "?" end
+    return table.concat(list, ", ", 1, #list - 1) .. " and " .. list[#list]
+end
+
 function ns.BuildChronicleRows()
     local deaths, firstMax = {}, nil
     local rows = {}
+    local recentBoss = {}   -- [boss key] = the row it was merged into
     for _, e in ipairs(ns.SortedEntries()) do
         local who = ns.People.DisplayName(e.author)
         local text
@@ -34,14 +55,32 @@ function ns.BuildChronicleRows()
             text = ("|cffff6060%s died|r%s (level %s), death #%d%s"):format(
                 who, InZone(e), tostring(e.level or "?"), deaths[dk], WithText(e))
         elseif e.kind == "boss" then
-            text = ("%s defeated |cffffc742%s|r%s%s"):format(who, e.name or "a boss", InZone(e), WithText(e))
+            -- one row per kill: every brother records the same kill, so merge
+            -- entries for the same boss within a few minutes into one row
+            local bossKey = tostring(e.encounter or (e.name or ""):lower())
+            local row = recentBoss[bossKey]
+            if row and (e.time or 0) - row.lastTime <= BOSS_MERGE_WINDOW then
+                AddParticipants(row, e)
+                row.lastTime = e.time or row.lastTime
+            else
+                row = { entry = e, boss = true, participants = {}, seen = {}, lastTime = e.time or 0 }
+                AddParticipants(row, e)
+                recentBoss[bossKey] = row
+                rows[#rows + 1] = row
+            end
         elseif e.kind == "loot" then
-            text = ("%s looted %s%s"):format(who, e.link or "something", WithText(e))
+            text = ("%s looted %s"):format(who, e.link or "something")
         elseif e.kind == "manual" then
             text = ("%s: |cffffffff%s|r"):format(who, e.text or "")
         end
         if text then
             rows[#rows + 1] = { entry = e, text = text }
+        end
+    end
+    for _, r in ipairs(rows) do
+        if r.boss then
+            local e = r.entry
+            r.text = ("%s defeated |cffffc742%s|r%s"):format(JoinNames(r.participants), e.name or "a boss", InZone(e))
         end
     end
     -- newest first
