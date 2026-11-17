@@ -33,7 +33,7 @@ env.C_AddOns = { LoadAddOn = function()
 end }
 env.SlashCmdList.FOSTBRAEDR("dbtest scarlet")
 local out = shown[2]
-assert(out:find("ForeverDB loaded") and out:find("drop: 3 entries"), "tables listed")
+assert(out:find("Data table: ForeverDB") and out:find("drop: 3 entries"), "tables listed")
 assert(out:find("Ravager") and out:find("Loksey"), "Scarlet Monastery drops found")
 assert(not out:find("Prison Shank"), "Stockade item must not be listed")
 assert(out:find("2 items drop inside"), "count")
