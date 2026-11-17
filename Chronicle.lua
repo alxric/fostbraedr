@@ -10,7 +10,8 @@
 --
 -- "tally" entries carry aggregated stats (quests, gold, minutes played) and are
 -- written every 15 minutes and at logout. "roll" (our own item roll: roll,
--- rollType, link) and "rollwin" (item roll we won: link) feed the Rivalry tab.
+-- rollType, link, boss) and "rollwin" (item roll we won: link, boss) come from
+-- the game's Loot History (see Rolls.lua) and feed the Rivalry tab.
 -- None of these three show in the timeline.
 local ADDON, ns = ...
 
@@ -106,44 +107,8 @@ end)
 
 -- Notable loot: parse our own loot chat lines into item links.
 local SELF_LOOT = { "LOOT_ITEM_SELF_MULTIPLE", "LOOT_ITEM_SELF", "LOOT_ITEM_PUSHED_SELF_MULTIPLE", "LOOT_ITEM_PUSHED_SELF" }
--- Item rolls: "Need Roll - %d for %s by %s" etc. (roll, item, player)
-local ROLLS = {
-    { key = "LOOT_ROLL_ROLLED_NEED", type = "need" },
-    { key = "LOOT_ROLL_ROLLED_NEED_ROLE_BONUS", type = "need" },
-    { key = "LOOT_ROLL_ROLLED_GREED", type = "greed" },
-    { key = "LOOT_ROLL_ROLLED_DE", type = "disenchant" },
-    { key = "LOOT_ROLL_ROLLED_TRANSMOG", type = "transmog" },
-}
-
-local function IsMyName(name)
-    if not name or not ns.me then return false end
-    if name == YOU then return true end
-    local key = ns.NameKey(name)
-    return key == ns.NameKey(ns.me) or key == ns.NameKey(ns.FirstName(ns.me))
-end
-
 local function ItemLink(text)
     return text and text:match("(|c[^|]*|Hitem:.-|h|r)")
-end
-
--- Returns true if the line was an item roll or roll win (and was handled).
-local function HandleRollLine(text)
-    local won = ns.MatchFormat(text, LOOT_ROLL_YOU_WON)
-    if won then
-        ns.AddEntry("rollwin", { link = ItemLink(won[1]) or won[1], zone = Zone() })
-        return true
-    end
-    for _, r in ipairs(ROLLS) do
-        local args = ns.MatchFormat(text, _G[r.key])
-        if args then
-            local roll = tonumber(args[1])
-            if roll and IsMyName(args[3]) then
-                ns.AddEntry("roll", { roll = roll, rollType = r.type, link = ItemLink(args[2]) })
-            end
-            return true
-        end
-    end
-    return false
 end
 
 local function IsMount(classID, subclassID)
@@ -165,7 +130,6 @@ end
 
 ns.On("CHAT_MSG_LOOT", function(text)
     if type(text) ~= "string" or ns.IsSecret(text) then return end
-    if HandleRollLine(text) then return end
     local matched
     for _, key in ipairs(SELF_LOOT) do
         if ns.MatchFormat(text, _G[key]) then matched = true break end

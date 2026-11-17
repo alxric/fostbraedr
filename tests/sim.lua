@@ -1,6 +1,6 @@
 -- Simulated WoW clients connected by a fake network. Run from the repo root: lua-5.1 tests/sync_test.lua
 local ROOT = "./"
-local FILES = {"Core.lua","People.lua","Serialize.lua","Comm.lua","Chronicle.lua","Sync.lua","Family.lua","Names.lua","Rivalry.lua"}
+local FILES = {"Core.lua","People.lua","Serialize.lua","Comm.lua","Chronicle.lua","Rolls.lua","Sync.lua","Family.lua","Names.lua","Rivalry.lua"}
 local clock = 0
 local clients = {}
 local network = {}   -- pending deliveries

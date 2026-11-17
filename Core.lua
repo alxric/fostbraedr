@@ -25,6 +25,7 @@ local DEFAULTS = {
     entries = {},           -- [id] = entry, id = "Author#n" (see Chronicle.lua)
     counters = {},          -- [author] = highest entry counter
     pending = {},           -- stats not yet written as a tally entry
+    lootSeen = {},          -- Loot History drops already turned into roll entries: [key] = time
     myChars = {},           -- ["First Last"] = true for every character on this account
     peers = {},             -- ["First Last"] = { lastSeen, version, level, zone, class } (from sync)
     account = {},           -- our identity: { id, name } (see People.lua)
@@ -190,6 +191,19 @@ end
 local eventFrame = CreateFrame("Frame")
 ns.eventFrame = eventFrame
 local handlers = {}
+
+-- Like ns.On, but silently skips events this client doesn't have.
+function ns.OnOptional(event, fn)
+    if C_EventUtils and C_EventUtils.IsEventValid and not C_EventUtils.IsEventValid(event) then return false end
+    if not handlers[event] then
+        -- registering an unknown event raises an error; try it first
+        local ok = pcall(eventFrame.RegisterEvent, eventFrame, event)
+        if not ok then return false end
+        handlers[event] = {}
+    end
+    table.insert(handlers[event], fn)
+    return true
+end
 
 -- ns.On("EVENT", function(...) end) -- multiple handlers per event allowed
 function ns.On(event, fn)

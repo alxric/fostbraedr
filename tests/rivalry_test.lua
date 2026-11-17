@@ -1,24 +1,15 @@
--- Rivalry stats, awards, item-roll parsing and week ranges. Run: lua-5.1 tests/rivalry_test.lua
+-- Rivalry stats, awards and week ranges. Run: lua-5.1 tests/rivalry_test.lua
 package.path = "./tests/?.lua;" .. package.path
 local sim = require("sim")
 local A = sim.NewClient("Ragnar", "Stormfjord", function(f, l) return f .. " " .. l end)
 local env, ns = A.env, A.ns
-env.LOOT_ROLL_ROLLED_NEED = "Need Roll - %d for %s by %s"
-env.LOOT_ROLL_ROLLED_GREED = "Greed Roll - %d for %s by %s"
-env.LOOT_ROLL_YOU_WON = "You won: %s"
-env.LOOT_ITEM_SELF = "You receive loot: %s."
-env.YOU = "You"
 env.C_DateAndTime = { GetSecondsUntilWeeklyReset = function() return 2 * 86400 end }
 env.SlashCmdList.FOSTBRAEDR("brother add Thorgrim Stormfjord")
-local link = "|cnIQ3:|Hitem:555::::|h[Shield]|h|r"
-for _, line in ipairs({
-    "Need Roll - 90 for " .. link .. " by Ragnar",
-    "Greed Roll - 40 for " .. link .. " by Ragnar",
-    "Need Roll - 20 for " .. link .. " by Ragnar-Stormfjord",
-    "Need Roll - 99 for " .. link .. " by Thorgrim",   -- someone else's roll: ignored
-    "You won: " .. link,
-    "Thorgrim won: " .. link,                          -- not ours
-}) do A.fire("CHAT_MSG_LOOT", line) end
+-- our item rolls (recorded from the Loot History, see rolls_test.lua): 90, 40, 20 and one win
+ns.AddEntry("roll", { roll = 90, rollType = "need" })
+ns.AddEntry("roll", { roll = 40, rollType = "greed" })
+ns.AddEntry("roll", { roll = 20, rollType = "need" })
+ns.AddEntry("rollwin", {})
 A.fire("PLAYER_DEAD")
 A.fire("QUEST_TURNED_IN")
 -- a brother's entries, as if synced
