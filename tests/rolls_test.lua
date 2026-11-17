@@ -125,6 +125,11 @@ assert(report:find("Win entries: 7, counted in Rivalry: 6"), "duplicate not coun
 assert(report:find("chat %(old version%)  %-> duplicate, not counted"), "old chat win flagged")
 local st = ns.ComputeRivalry(nil, nil)[ns.People.GroupKey("Ragnar Stormfjord")]
 assert(st.rollWins == 6, "Rivalry counts 6, got " .. st.rollWins)
+-- what the old parser really stored in Forever: the Loot History reference number
+ns.AddEntry("rollwin", { link = "261637889" })
+env.SlashCmdList.FOSTBRAEDR("rolls")
+assert(report:find("Win entries: 8, counted in Rivalry: 6"), "itemless old win not counted")
+assert(report:find("261637889  from chat %(old version%)  %-> old entry without an item, not counted"))
 
 print("--- login repair: no rolls of our own -> forget processed drops")
 local B = sim.NewClient("Brokk", "Stormfjord", function(f, l) return f .. " " .. l end)

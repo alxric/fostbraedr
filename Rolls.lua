@@ -204,6 +204,8 @@ ns.On("PLAYER_LOGIN", function()
     end
 end)
 
+local function ItemOf(e) return type(e.link) == "string" and e.link:match("item:(%d+)") end
+
 -- /fost rolls: scan now and explain, plus how many roll entries we hold.
 function ns.RollsReport()
     local lines = {}
@@ -232,7 +234,7 @@ function ns.RollsReport()
         local e = w.e
         lines[#lines + 1] = ("  %s  %s  from %s%s"):format(date("%d %b %H:%M", e.time or 0), tostring(e.link or "?"),
             (e.src == "history" or e.boss) and ("Loot History (" .. tostring(e.boss) .. ")") or "chat (old version)",
-            w.counted and "" or "  -> duplicate, not counted")
+            w.counted and "" or (ItemOf(e) and "  -> duplicate, not counted" or "  -> old entry without an item, not counted"))
     end
     ns.ShowTextWindow("Item rolls", table.concat(lines, "\n"))
 end

@@ -42,6 +42,10 @@ end
 local function DuplicateChatWin(e, historyWins)
     if IsHistoryWin(e) then return false end
     local id = ItemID(e.link)
+    -- The old chat parser stored the Loot History reference number from Forever's
+    -- "You won" line instead of the item (e.g. "261637889"). Those wins are the
+    -- same ones the Loot History records properly, so they don't count.
+    if not id then return true end
     local times = id and historyWins[e.author .. "|" .. id]
     for _, t in ipairs(times or {}) do
         -- a week: the Loot History survives logouts, so a win can be read from it

@@ -9,7 +9,7 @@ env.SlashCmdList.FOSTBRAEDR("brother add Thorgrim Stormfjord")
 ns.AddEntry("roll", { roll = 90, rollType = "need" })
 ns.AddEntry("roll", { roll = 40, rollType = "greed" })
 ns.AddEntry("roll", { roll = 20, rollType = "need" })
-ns.AddEntry("rollwin", {})
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:555::::|h[Shield]|h|r", boss = "Herod", src = "history" })
 A.fire("PLAYER_DEAD")
 A.fire("QUEST_TURNED_IN")
 -- a brother's entries, as if synced
