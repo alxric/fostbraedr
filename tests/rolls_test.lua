@@ -115,7 +115,15 @@ local report
 ns.ShowTextWindow = function(_, text) report = text end
 env.SlashCmdList.FOSTBRAEDR("rolls")
 print(report)
-assert(report:find("Our roll entries: 9, wins: 5") and report:find("already counted"), "report explains")
+assert(report:find("Our roll entries: 9%. Win entries: 5, counted in Rivalry: 5") and report:find("already counted"), "report explains")
+-- the in-game case: an old chat win AND a Loot History win for the same item
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10769::::|h[Glowing Eye]|h|r" })
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10769::::|h[Glowing Eye]|h|r", boss = "Mordresh Fire Eye", src = "history" })
+env.SlashCmdList.FOSTBRAEDR("rolls")
+assert(report:find("Win entries: 7, counted in Rivalry: 6"), "duplicate not counted")
+assert(report:find("chat %(old version%)  %-> duplicate, not counted"), "old chat win flagged")
+local st = ns.ComputeRivalry(nil, nil)[ns.People.GroupKey("Ragnar Stormfjord")]
+assert(st.rollWins == 6, "Rivalry counts 6, got " .. st.rollWins)
 
 print("--- login repair: no rolls of our own -> forget processed drops")
 local B = sim.NewClient("Brokk", "Stormfjord", function(f, l) return f .. " " .. l end)

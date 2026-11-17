@@ -47,6 +47,22 @@ local function DuplicateChatWin(e, historyWins)
     return false
 end
 
+-- For reports: is this win counted by Rivalry?
+function ns.WinCounted(e)
+    local historyWins = {}
+    for _, x in pairs(ns.db.entries) do
+        if x.kind == "rollwin" and x.author == e.author and IsHistoryWin(x) then
+            local id = ItemID(x.link)
+            if id then
+                local key = x.author .. "|" .. id
+                historyWins[key] = historyWins[key] or {}
+                table.insert(historyWins[key], x.time or 0)
+            end
+        end
+    end
+    return not DuplicateChatWin(e, historyWins)
+end
+
 -- Stats per person for entries with from <= time < to (nil = unbounded).
 -- A person's characters are combined (see People.lua); characters not linked to
 -- anyone count on their own. Returns stats keyed by People.GroupKey (each with

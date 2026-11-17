@@ -212,12 +212,27 @@ function ns.RollsReport()
     end
     local ok, added = pcall(ns.ScanLootHistory, Log)
     if not ok then Log("Error: %s", tostring(added)) end
-    local rolls, wins = 0, 0
+    local rolls, wins, counted = 0, 0, 0
+    local winList = {}
     for _, e in pairs(ns.db.entries) do
         if e.author == ns.me and e.kind == "roll" then rolls = rolls + 1 end
-        if e.author == ns.me and e.kind == "rollwin" then wins = wins + 1 end
+        if e.author == ns.me and e.kind == "rollwin" then
+            wins = wins + 1
+            local isCounted = not ns.WinCounted or ns.WinCounted(e)
+            if isCounted then counted = counted + 1 end
+            winList[#winList + 1] = { e = e, counted = isCounted }
+        end
     end
-    table.insert(lines, 1, ("Fostbraedr %s. Added now: %s. Our roll entries: %d, wins: %d."):format(
-        tostring(ns.version), tostring(ok and added or 0), rolls, wins))
+    table.sort(winList, function(a, b) return (a.e.time or 0) < (b.e.time or 0) end)
+    table.insert(lines, 1, ("Fostbraedr %s. Added now: %s. Our roll entries: %d. Win entries: %d, counted in Rivalry: %d."):format(
+        tostring(ns.version), tostring(ok and added or 0), rolls, wins, counted))
+    lines[#lines + 1] = ""
+    lines[#lines + 1] = "Our win entries:"
+    for _, w in ipairs(winList) do
+        local e = w.e
+        lines[#lines + 1] = ("  %s  %s  from %s%s"):format(date("%d %b %H:%M", e.time or 0), tostring(e.link or "?"),
+            (e.src == "history" or e.boss) and ("Loot History (" .. tostring(e.boss) .. ")") or "chat (old version)",
+            w.counted and "" or "  -> duplicate, not counted")
+    end
     ns.ShowTextWindow("Item rolls", table.concat(lines, "\n"))
 end
