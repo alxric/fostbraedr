@@ -35,6 +35,12 @@ and publishes the release. It refuses to release if the tag and the `.toc` versi
 
 The **Settings** tab in the window has every option: which loot quality to record, pop-up notices and sounds, pokes, the minimap button, and your brother list. The commands below do the same from chat.
 
+## First names on party and raid frames
+
+The **Frames** tab can show only first names ("Thorgrim" instead of "Thorgrim Stormfjord") on Blizzard's
+raid-style (compact) party and raid frames and on the classic party frames, for all surnames or only your
+family's. It only changes the displayed text; clicking still targets and whispers the full name.
+
 ## Brothers and alts
 
 Add **one character per brother** (Settings tab, or `/fost brother add`). When his addon says hello it

@@ -19,6 +19,7 @@ local DEFAULTS = {
         toasts = true,      -- pop-up notices (false = chat)
         pokes = true,       -- receive pokes
         toastSound = true,  -- sounds with pop-up notices (pokes always play)
+        names = { enabled = false, raidFrames = true, partyFrames = true, mode = "all" }, -- see Names.lua
         -- status = "custom status text" (nil when unset)    -- record loot of this quality and up (4 = epic); mounts always
     },
     entries = {},           -- [id] = entry, id = "Author#n" (see Chronicle.lua)

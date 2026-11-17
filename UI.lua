@@ -11,6 +11,7 @@ local TABS = {
     { key = "chronicle", title = "Chronicle", icon = "Interface\\Icons\\INV_Misc_Book_09", build = "BuildChronicleTab" },
     { key = "rivalry",   title = "Rivalry",   icon = "Interface\\Icons\\Ability_Warrior_BattleShout", build = "BuildRivalryTab" },
     { key = "family",    title = "Family",    icon = "Interface\\Icons\\INV_Misc_GroupNeedMore", build = "BuildFamilyTab" },
+    { key = "frames",    title = "Frames",    icon = "Interface\\Icons\\INV_Misc_Spyglass_03", build = "BuildFramesTab" },
     { key = "settings",  title = "Settings",  icon = "Interface\\Icons\\INV_Misc_Gear_01", build = "BuildSettingsTab" },
 }
 

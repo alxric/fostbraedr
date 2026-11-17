@@ -1,6 +1,6 @@
 -- Simulated WoW clients connected by a fake network. Run from the repo root: lua-5.1 tests/sync_test.lua
 local ROOT = "./"
-local FILES = {"Core.lua","People.lua","Serialize.lua","Comm.lua","Chronicle.lua","Sync.lua","Family.lua","Rivalry.lua"}
+local FILES = {"Core.lua","People.lua","Serialize.lua","Comm.lua","Chronicle.lua","Sync.lua","Family.lua","Names.lua","Rivalry.lua"}
 local clock = 0
 local clients = {}
 local network = {}   -- pending deliveries
@@ -29,6 +29,15 @@ local function NewClient(first, last, senderFormat, initialDB)
   env.UnitIsUnit = function(a,b) return a==b end
   env.GetMoney = function() return 0 end
   env.InCombatLockdown = function() return c.combat or false end
+  env.hooksecurefunc = function(a, b, c2)
+    if type(a) == "string" then
+      local orig = env[a]; env[a] = function(...) local r = orig(...) b(...) return r end
+    else
+      local orig = a[b]; a[b] = function(...) local r = orig(...) c2(...) return r end
+    end
+  end
+  env.UnitExists = function(u) return u ~= nil end
+  env.UnitIsPlayer = function(u) return true end
   env.IsInInstance = function() return c.instance ~= nil, c.instance and "party" or "none" end
   env.GetInstanceInfo = function() return c.instance end
   env.UnitIsDeadOrGhost = function() return false end

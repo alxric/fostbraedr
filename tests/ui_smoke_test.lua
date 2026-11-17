@@ -47,7 +47,7 @@ env.C_DateAndTime = { GetSecondsUntilWeeklyReset = function() return 86400 end }
 env.PlaySoundFile = function() return false end
 env.RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 env.LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior" }
-for _, f in ipairs({ "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
+for _, f in ipairs({ "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "NamesUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
     local ch = assert(loadfile("./" .. f)); setfenv(ch, env); ch("Fostbraedr", ns)
 end
 A.fire("PLAYER_LOGIN")
@@ -97,7 +97,8 @@ env.SlashCmdList.FOSTBRAEDR("toasts")
 env.SlashCmdList.FOSTBRAEDR("status testing things")
 env.SlashCmdList.FOSTBRAEDR("poke thorgrim hi")
 -- settings tab: refresh, click a quality, flip toggles, add/remove brothers
-local settings = frame.tabs[4]
+local settings
+for _, tab in ipairs(frame.tabs) do if tab.def.key == "settings" then settings = tab end end
 assert(settings and settings.def.key == "settings", "settings tab missing")
 settings.panel:Refresh()
 env.ITEM_QUALITY_COLORS = { [3] = { hex = "ff0070dd" } }
