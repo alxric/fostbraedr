@@ -390,16 +390,6 @@ commands.loottest = function()
     if not ok then ns.Print("Loot test failed: %s", tostring(err)) end
 end
 
-commands.ejtest = function(rest)
-    local ok, err = pcall(ns.EJTest, rest)
-    if not ok then ns.Print("EJ test failed: %s", tostring(err)) end
-end
-
-commands.dbtest = function(rest)
-    local ok, err = pcall(ns.DBTest, rest)
-    if not ok then ns.Print("DB test failed: %s", tostring(err)) end
-end
-
 commands.dump = function(rest)
     local ok, err = pcall(ns.Dump, rest)
     if not ok then ns.Print("Dump failed: %s", tostring(err)) end

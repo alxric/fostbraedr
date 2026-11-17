@@ -4,7 +4,6 @@
 ## Author: Alexander Rickardsson
 ## Version: 0.3.0
 ## SavedVariables: FostbraedrDB
-## OptionalDeps: ForeverDB
 ## IconTexture: Interface\Icons\Achievement_Zone_HowlingFjord_01
 ## AddonCompartmentFunc: Fostbraedr_OnAddonCompartmentClick
 ## AddonCompartmentFuncOnEnter: Fostbraedr_OnAddonCompartmentEnter
