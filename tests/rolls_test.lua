@@ -90,12 +90,32 @@ local stats = ns.ComputeRivalry(nil, nil)
 local me = stats[ns.People.GroupKey("Ragnar Stormfjord")]
 print("rolls", me.rolls, "luck", me.luck, "wins", me.rollWins)
 assert(me.rolls == 7 and me.rollWins == 4)
+print("--- Forever's drops have no lootListID: fingerprint instead")
+drops[2781] = {
+    { itemHyperlink = "|cnIQ3:|Hitem:10760::::|h[Swine Fists]|h|r", winner = R("Ragnar", 67, 0, true),
+      rollInfos = { R("Ragnar", 67, 0, true), R("Tasty", nil, 3, false) } },
+    { itemHyperlink = "|cnIQ3:|Hitem:4636::::|h[Strong Iron Lockbox]|h|r", winner = R("Panda", 9, 0, false),
+      rollInfos = { R("Panda", 9, 0, false), R("Ragnar", 21, 0, true) } },
+}
+local realEncounters = env.C_LootHistory.GetAllEncounterInfos
+env.C_LootHistory.GetAllEncounterInfos = function()
+    local list = realEncounters()
+    list[#list + 1] = { encounterID = 2781, encounterName = "Plaguemaw the Rotting" }
+    return list
+end
+-- an old chat-recorded win for Swine Fists exists already (0.2.x)
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10760::::|h[Swine Fists]|h|r" })
+local winsBefore = #Entries("rollwin")
+assert(ns.ScanLootHistory() == 2, "two rolls recorded, the Swine Fists win not duplicated")
+assert(#Entries("rollwin") == winsBefore, "no double win")
+assert(ns.ScanLootHistory() == 0, "fingerprints prevent recounting")
+
 print("--- /fost rolls report")
 local report
 ns.ShowTextWindow = function(_, text) report = text end
 env.SlashCmdList.FOSTBRAEDR("rolls")
 print(report)
-assert(report:find("Our roll entries: 7, wins: 4") and report:find("already counted"), "report explains")
+assert(report:find("Our roll entries: 9, wins: 5") and report:find("already counted"), "report explains")
 
 print("--- login repair: no rolls of our own -> forget processed drops")
 local B = sim.NewClient("Brokk", "Stormfjord", function(f, l) return f .. " " .. l end)

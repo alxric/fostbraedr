@@ -46,6 +46,22 @@ local function HasSecrets(info, rolls)
     return false
 end
 
+-- Versions before 0.3.1 recorded wins from chat ("You won: ..."); those same
+-- wins are in the Loot History. Don't record a win twice for the same item
+-- within a day.
+local function RecentWinFor(link)
+    local id = link and link:match("item:(%d+)")
+    if not id then return false end
+    local now = GetServerTime()
+    for _, e in pairs(ns.db.entries) do
+        if e.kind == "rollwin" and e.author == ns.me and e.link and e.link:match("item:(%d+)") == id
+            and math.abs(now - (e.time or 0)) < 24 * 3600 then
+            return true
+        end
+    end
+    return false
+end
+
 -- Process finished drops we haven't seen yet. Returns the number of entries added.
 -- With `log` (a function taking a format string), explains what happens to each drop.
 function ns.ScanLootHistory(log)
@@ -71,6 +87,7 @@ function ns.ScanLootHistory(log)
         return 0
     end
     log("%d encounter(s) in the Loot History.", #encounters)
+    local loggedFields = false
     for _, enc in ipairs(encounters) do
         local encID = Plain(enc.encounterID)
         local okD, drops = false, nil
@@ -85,12 +102,31 @@ function ns.ScanLootHistory(log)
                     local okI, full = pcall(LH.GetSortedInfoForDrop, encID, listID)
                     if okI and type(full) == "table" then info = full end
                 end
-                local key = listID and (encID .. "/" .. listID .. "/" ..
-                    tostring(Plain(info.startTime) or Plain(enc.startTime) or ""))
+                -- Identify the drop: by its loot list id when the client has one (Forever
+                -- doesn't), else by a fingerprint of boss, item, winner and start time.
+                local key
+                if listID then
+                    key = encID .. "/" .. listID .. "/" .. tostring(Plain(info.startTime) or Plain(enc.startTime) or "")
+                else
+                    local w = type(info.winner) == "table" and info.winner or {}
+                    local link = Plain(info.itemHyperlink)
+                    local itemID = link and link:match("item:(%d+)")
+                    if itemID then
+                        key = table.concat({ encID, itemID, tostring(Plain(w.playerName) or ""), tostring(Plain(w.roll) or ""),
+                            tostring(Plain(info.startTime) or Plain(enc.startTime) or "") }, "|")
+                    end
+                end
+                if not loggedFields then
+                    loggedFields = true
+                    local fields = {}
+                    for k in pairs(info) do fields[#fields + 1] = tostring(k) end
+                    table.sort(fields)
+                    log("  (drop fields: %s)", table.concat(fields, ", "))
+                end
                 local rolls = info.rollInfos
                 local what = tostring(Plain(info.itemHyperlink) or ("drop " .. tostring(listID)))
                 if not key then
-                    log("  %s: no loot list id, skipped", what)
+                    log("  %s: can't identify this drop, skipped", what)
                 elseif seen[key] then
                     log("  %s: already counted", what)
                 elseif HasSecrets(info, rolls) then
@@ -121,9 +157,13 @@ function ns.ScanLootHistory(log)
                         end
                         if not mine then log("  %s: no roll from us", what) end
                         if type(winner) == "table" and winner.isSelf == true then
-                            ns.AddEntry("rollwin", { link = link, boss = boss })
-                            added = added + 1
-                            log("  %s: we won it", what)
+                            if RecentWinFor(link) then
+                                log("  %s: we won it (already recorded earlier)", what)
+                            else
+                                ns.AddEntry("rollwin", { link = link, boss = boss })
+                                added = added + 1
+                                log("  %s: we won it", what)
+                            end
                         end
                     end
                 end
