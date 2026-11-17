@@ -27,6 +27,8 @@ local function NewStats()
              rolls = 0, rollSum = 0, rollWins = 0 }
 end
 
+local DUPLICATE_WINDOW = 7 * 24 * 3600
+
 local function ItemID(link)
     return type(link) == "string" and link:match("item:(%d+)") or nil
 end
@@ -36,13 +38,15 @@ local function IsHistoryWin(e)
 end
 
 -- An old chat-recorded win that the Loot History also recorded (same author and
--- item within a day)?
+-- item within a week)?
 local function DuplicateChatWin(e, historyWins)
     if IsHistoryWin(e) then return false end
     local id = ItemID(e.link)
     local times = id and historyWins[e.author .. "|" .. id]
     for _, t in ipairs(times or {}) do
-        if math.abs(t - (e.time or 0)) < 24 * 3600 then return true end
+        -- a week: the Loot History survives logouts, so a win can be read from it
+        -- days after the chat line was recorded
+        if math.abs(t - (e.time or 0)) < DUPLICATE_WINDOW then return true end
     end
     return false
 end

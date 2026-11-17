@@ -48,14 +48,14 @@ end
 
 -- Versions before 0.3.1 recorded wins from chat ("You won: ..."); those same
 -- wins are in the Loot History. Don't record a win twice for the same item
--- within a day.
+-- within a week (the Loot History survives logouts).
 local function RecentWinFor(link)
     local id = link and link:match("item:(%d+)")
     if not id then return false end
     local now = GetServerTime()
     for _, e in pairs(ns.db.entries) do
         if e.kind == "rollwin" and e.author == ns.me and e.link and e.link:match("item:(%d+)") == id
-            and math.abs(now - (e.time or 0)) < 24 * 3600 then
+            and math.abs(now - (e.time or 0)) < 7 * 24 * 3600 then
             return true
         end
     end

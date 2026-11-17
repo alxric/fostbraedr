@@ -116,8 +116,9 @@ ns.ShowTextWindow = function(_, text) report = text end
 env.SlashCmdList.FOSTBRAEDR("rolls")
 print(report)
 assert(report:find("Our roll entries: 9%. Win entries: 5, counted in Rivalry: 5") and report:find("already counted"), "report explains")
--- the in-game case: an old chat win AND a Loot History win for the same item
-ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10769::::|h[Glowing Eye]|h|r" })
+-- the in-game case: an old chat win (recorded yesterday) AND a Loot History win
+-- for the same item recorded today
+ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10769::::|h[Glowing Eye]|h|r" }).time = env.GetServerTime() - 30 * 3600
 ns.AddEntry("rollwin", { link = "|cnIQ3:|Hitem:10769::::|h[Glowing Eye]|h|r", boss = "Mordresh Fire Eye", src = "history" })
 env.SlashCmdList.FOSTBRAEDR("rolls")
 assert(report:find("Win entries: 7, counted in Rivalry: 6"), "duplicate not counted")
