@@ -63,10 +63,10 @@ function ns.BuildFramesTab(panel)
     Place(preview, -268)
     preview:SetPoint("RIGHT", panel, "RIGHT")
 
-    Hint("Only Blizzard's own frames. With EllesmereUI, ElvUI, Cell or similar, use an addon such as", -300)
-    Hint("\"First Name Basis\" instead; it supports those frames.", -316)
+    Hint("Only Blizzard's own frames. With EllesmereUI, ElvUI, Cell or similar, use an addon such as", -346)
+    Hint("\"First Name Basis\" instead; it supports those frames.", -362)
 
-    local combat = Hint("", -340)
+    local combat = Hint("", -386)
     combat:SetTextColor(unpack(T.colors.accent))
 
     local function SampleNames()
