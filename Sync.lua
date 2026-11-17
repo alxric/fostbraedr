@@ -165,7 +165,11 @@ function Sync.SendMissing(name, theirHW)
         bytes = bytes + size
     end
     SendTo(name, { t = "E", l = batch })
-    return #list
+    local visible = 0
+    for _, e in ipairs(list) do
+        if ns.TIMELINE_KINDS[e.kind] then visible = visible + 1 end
+    end
+    return visible
 end
 
 -- Validate and store an entry from the wire. Returns the entry if it was new.
@@ -337,7 +341,7 @@ Comm.On("HI", function(msg, sender)
     Sync.ApplyStatus(name, msg.st, type(msg.av) == "string" and msg.av or nil)
     Sync.CheckVersion(name, msg.av, msg.sv)
     local sent = Sync.SendMissing(name, msg.hw)
-    if sent > 0 then ns.Print("Sending %d chronicle entries to %s.", sent, ns.People.DisplayName(name)) end
+    if sent > 0 then ns.Print("Sending %d chronicle entries to %s.", sent, ns.People.DisplayName(name)) end -- timeline ones only
     if not msg.r then Sync.Hello(name, true) end
 end)
 
@@ -361,7 +365,10 @@ Comm.On("E", function(msg, sender)
     for _, e in ipairs(msg.l) do
         local new = Sync.Accept(e)
         if new then
-            added = added + 1
+            -- announce only timeline entries that didn't get their own pop-up
+            -- (fresh ones do; hidden stats/rolls never need announcing)
+            local fresh = new.time and GetServerTime() - new.time < 10 * 60
+            if ns.TIMELINE_KINDS[new.kind] and not fresh then added = added + 1 end
             ns.Fire("ENTRY_ADDED", new, name)
         end
     end

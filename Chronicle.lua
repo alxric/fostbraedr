@@ -16,6 +16,10 @@ local ADDON, ns = ...
 
 local TALLY_INTERVAL = 15 * 60
 
+-- Kinds shown in the timeline; the rest (tally, roll, rollwin) are hidden data
+-- that sync silently.
+ns.TIMELINE_KINDS = { level = true, death = true, boss = true, loot = true, manual = true }
+
 -------------------------------------------------------------------------------
 -- Entries
 -------------------------------------------------------------------------------
