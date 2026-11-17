@@ -4,6 +4,8 @@ local sim = require("sim")
 local A = sim.NewClient("Ragnar", "Stormfjord", function(f, l) return f .. " " .. l end)
 local env, ns = A.env, A.ns
 local ch = assert(loadfile("./Diagnostics.lua")); setfenv(ch, env); ch("Fostbraedr", ns)
+local shown = {}
+ns.ShowTextWindow = function(title, text) shown[#shown + 1] = text print("[window: " .. title .. "]\n" .. text) end
 env.SlashCmdList.FOSTBRAEDR("ejtest")            -- no EJ API at all
 env.EJ_GetNumTiers = function() return 1 end
 env.EJ_SelectTier = function() end
@@ -15,4 +17,7 @@ env.C_EncounterJournal = { GetLootInfoByIndex = function(i) return { link = "[It
 env.C_Item = { GetItemInfo = function() return "x", "y", 3, 30, 25, nil, nil, nil, "INVTYPE_CHEST" end,
                GetItemStats = function() return { ITEM_MOD_STRENGTH_SHORT = 5 } end }
 env.SlashCmdList.FOSTBRAEDR("ejtest scarlet")
+assert(shown[1]:find("No Encounter Journal API"), "early stop still shows the window")
+assert(shown[2]:find("Scarlet Monastery") and shown[2]:find("req 25"), "dungeon details in the window")
+assert(#shown == 2, "each run should open the window once")
 print("ALL OK")

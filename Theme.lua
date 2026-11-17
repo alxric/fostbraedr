@@ -189,3 +189,92 @@ function T.Section(parent, title)
     fs.line = line
     return fs
 end
+
+-------------------------------------------------------------------------------
+-- Copyable text window: ns.ShowTextWindow(title, text). Mouse wheel scrolls;
+-- "Select all" then Ctrl+C copies.
+-------------------------------------------------------------------------------
+-- Make chat-style text plain and safe for an EditBox: links become
+-- "[Name] (item 123)", colours and textures go, any other "|" is escaped.
+function T.PlainText(text)
+    text = tostring(text or "")
+    text = text:gsub("|c[^|]*|H(%a+):(%d*)[^|]*|h(.-)|h|r", function(kind, id, label)
+        return label .. (id ~= "" and (" (" .. kind .. " " .. id .. ")") or "")
+    end)
+    text = text:gsub("|H(%a+):(%d*)[^|]*|h(.-)|h", function(kind, id, label)
+        return label .. (id ~= "" and (" (" .. kind .. " " .. id .. ")") or "")
+    end)
+    text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn[^:]*:", ""):gsub("|r", "")
+    text = text:gsub("|T.-|t", ""):gsub("|A.-|a", "")
+    text = text:gsub("|", "/") -- a lone "|" would be an escape code in an EditBox
+    return text
+end
+
+local textWindow
+function ns.ShowTextWindow(title, text)
+    if not textWindow then
+        local f = CreateFrame("Frame", "FostbraedrTextWindow", UIParent)
+        f:SetSize(640, 420)
+        f:SetPoint("CENTER")
+        f:SetFrameStrata("DIALOG")
+        f:SetToplevel(true)
+        f:SetClampedToScreen(true)
+        f:SetMovable(true)
+        f:EnableMouse(true)
+        f:RegisterForDrag("LeftButton")
+        f:SetScript("OnDragStart", f.StartMoving)
+        f:SetScript("OnDragStop", f.StopMovingOrSizing)
+        T.Panel(f, T.colors.bg, { 0, 0, 0, 1 })
+        table.insert(UISpecialFrames, "FostbraedrTextWindow")
+
+        f.title = T.Text(f, 14, T.colors.accent)
+        f.title:SetPoint("TOPLEFT", 14, -10)
+        local close = T.Button(f, "Close", 70, 22)
+        close:SetPoint("TOPRIGHT", -10, -6)
+        close:SetScript("OnClick", function() f:Hide() end)
+        local select = T.Button(f, "Select all", 90, 22)
+        select:SetPoint("RIGHT", close, "LEFT", -6, 0)
+        local hint = T.Text(f, 11, T.colors.muted)
+        hint:SetPoint("RIGHT", select, "LEFT", -10, 0)
+        hint:SetText("then Ctrl+C to copy")
+
+        local box = CreateFrame("Frame", nil, f)
+        box:SetPoint("TOPLEFT", 10, -36)
+        box:SetPoint("BOTTOMRIGHT", -10, 10)
+        T.Panel(box)
+        local scroll = CreateFrame("ScrollFrame", nil, box)
+        scroll:SetPoint("TOPLEFT", 8, -8)
+        scroll:SetPoint("BOTTOMRIGHT", -8, 8)
+        local edit = CreateFrame("EditBox", nil, scroll)
+        edit:SetMultiLine(true)
+        edit:SetAutoFocus(false)
+        edit:SetFont(STANDARD_TEXT_FONT, 12, "")
+        edit:SetTextColor(unpack(T.colors.text))
+        edit:SetWidth(600)
+        edit:SetScript("OnEscapePressed", function() f:Hide() end)
+        -- read-only: put the text back if someone types in it
+        edit:SetScript("OnTextChanged", function(self, userInput)
+            if userInput and f.text then self:SetText(f.text) end
+        end)
+        scroll:SetScrollChild(edit)
+        scroll:EnableMouseWheel(true)
+        scroll:SetScript("OnMouseWheel", function(self, delta)
+            local maxScroll = math.max(0, edit:GetHeight() - self:GetHeight())
+            local v = math.min(maxScroll, math.max(0, self:GetVerticalScroll() - delta * 40))
+            self:SetVerticalScroll(v)
+        end)
+        scroll:SetScript("OnSizeChanged", function(self, w) if w and w > 0 then edit:SetWidth(w) end end)
+        select:SetScript("OnClick", function()
+            edit:SetFocus()
+            edit:HighlightText()
+        end)
+        f.edit, f.scroll = edit, scroll
+        textWindow = f
+    end
+    textWindow.title:SetText(title or "Fostbraedr")
+    textWindow.text = T.PlainText(text)
+    textWindow.edit:SetText(textWindow.text)
+    textWindow.edit:SetCursorPosition(0)
+    textWindow.scroll:SetVerticalScroll(0)
+    textWindow:Show()
+end

@@ -5,7 +5,18 @@
 -- once inside and once after leaving, to see whether roll tracking can use it.
 local ADDON, ns = ...
 
-local MAX_LINES = 40
+-- Run a test body that writes lines with Out(fmt, ...), then show everything in
+-- the copyable text window (also when the body stops early or errors).
+local function RunInWindow(title, body, ...)
+    local buffer = {}
+    local function Out(fmt, ...)
+        buffer[#buffer + 1] = select("#", ...) > 0 and fmt:format(...) or tostring(fmt)
+    end
+    local ok, err = pcall(body, Out, ...)
+    if not ok then Out("Error: %s", tostring(err)) end
+    ns.ShowTextWindow(title, table.concat(buffer, "\n"))
+    ns.Print("%s: output is in the window (Select all, then Ctrl+C).", title)
+end
 
 -- Render a value for printing without ever touching a secret's contents.
 local function Show(v)
@@ -14,12 +25,7 @@ local function Show(v)
     return tostring(v)
 end
 
-function ns.LootTest()
-    local lines = 0
-    local function Out(fmt, ...)
-        lines = lines + 1
-        if lines <= MAX_LINES then ns.Print(fmt, ...) end
-    end
+local function LootTestBody(Out)
 
     local inInstance = IsInInstance()
     Out("Loot test: in instance=%s, in combat=%s, issecretvalue exists=%s",
@@ -70,7 +76,6 @@ function ns.LootTest()
             end
         end
     end
-    if lines > MAX_LINES then ns.Print("... %d more lines not shown.", lines - MAX_LINES) end
 end
 
 -------------------------------------------------------------------------------
@@ -86,12 +91,7 @@ local function Has(name)
     return v ~= nil
 end
 
-function ns.EJTest(filter)
-    local lines = 0
-    local function Out(fmt, ...)
-        lines = lines + 1
-        if lines <= MAX_LINES then ns.Print(fmt, ...) end
-    end
+local function EJTestBody(Out, filter)
     filter = filter and filter ~= "" and filter:lower() or nil
     -- some clients only expose the EJ API once the Adventure Guide module is loaded
     if not EJ_GetNumTiers and C_AddOns and C_AddOns.LoadAddOn then
@@ -172,5 +172,7 @@ function ns.EJTest(filter)
             Out("  loot %d error: %s", i, tostring(info))
         end
     end
-    if lines > MAX_LINES then ns.Print("... %d more lines not shown.", lines - MAX_LINES) end
 end
+
+function ns.LootTest() RunInWindow("Loot test", LootTestBody) end
+function ns.EJTest(filter) RunInWindow("Adventure Guide test", EJTestBody, filter) end

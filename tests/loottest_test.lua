@@ -4,6 +4,8 @@ local sim = require("sim")
 local A = sim.NewClient("Ragnar", "Stormfjord", function(f, l) return f .. " " .. l end)
 local env, ns = A.env, A.ns
 local ch = assert(loadfile("./Diagnostics.lua")); setfenv(ch, env); ch("Fostbraedr", ns)
+local shown = {}
+ns.ShowTextWindow = function(title, text) shown[#shown + 1] = text print("[window: " .. title .. "]\n" .. text) end
 local SECRET = {}
 env.issecretvalue = function(v) return v == SECRET end
 env.C_LootHistory = {
@@ -17,4 +19,7 @@ env.C_LootHistory = {
 env.SlashCmdList.FOSTBRAEDR("loottest")
 env.C_LootHistory = nil
 env.SlashCmdList.FOSTBRAEDR("loottest")
+assert(shown[1]:find("Thorgrim rolled 88") and shown[1]:find("<secret>"), "loot details in the window")
+assert(shown[2]:find("doesn't exist"), "missing API reported in the window")
+assert(#shown == 2, "each run should open the window once")
 print("ALL OK")
