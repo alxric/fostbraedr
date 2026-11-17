@@ -176,3 +176,114 @@ end
 
 function ns.LootTest() RunInWindow("Loot test", LootTestBody) end
 function ns.EJTest(filter) RunInWindow("Adventure Guide test", EJTestBody, filter) end
+
+-------------------------------------------------------------------------------
+-- /fost dbtest [dungeon]: is the ForeverDB data addon installed, and what does
+-- its data look like? Shows meta, every table with its size and a sample entry,
+-- then tries "what drops in <dungeon>" (default: Scarlet Monastery).
+-------------------------------------------------------------------------------
+-- Compact, bounded description of any value (never touches secrets: this is
+-- static addon data).
+local function Describe(v, depth, budget)
+    depth, budget = depth or 0, budget or { n = 0 }
+    budget.n = budget.n + 1
+    if budget.n > 60 then return "..." end
+    local t = type(v)
+    if t == "string" then return ("%q"):format(#v > 40 and (v:sub(1, 40) .. "...") or v) end
+    if t ~= "table" then return tostring(v) end
+    if depth >= 2 then return "{...}" end
+    local parts, i = {}, 0
+    for k, val in pairs(v) do
+        i = i + 1
+        if i > 8 then parts[#parts + 1] = "..." break end
+        parts[#parts + 1] = tostring(k) .. "=" .. Describe(val, depth + 1, budget)
+    end
+    return "{" .. table.concat(parts, ", ") .. "}"
+end
+
+local function Count(t)
+    local n = 0
+    for _ in pairs(t) do n = n + 1 end
+    return n
+end
+
+function ns.LoadForeverDB()
+    if type(ForeverDB) == "table" then return ForeverDB end
+    if C_AddOns and C_AddOns.LoadAddOn then
+        local ok, loaded, reason = pcall(C_AddOns.LoadAddOn, "ForeverDB")
+        if ok and type(ForeverDB) == "table" then return ForeverDB end
+        return nil, ok and tostring(reason or loaded) or tostring(loaded)
+    end
+    return nil, "C_AddOns.LoadAddOn missing"
+end
+
+local function DBTestBody(Out, dungeon)
+    dungeon = (dungeon and dungeon ~= "") and dungeon:lower() or "scarlet monastery"
+    local db, why = ns.LoadForeverDB()
+    if not db then
+        return Out("ForeverDB isn't available (%s). Install the 'ForeverDB' addon (CurseForge) and make sure it's enabled.", tostring(why))
+    end
+    Out("ForeverDB loaded. meta: %s", Describe(db.meta))
+    Out("")
+    Out("Tables:")
+    local names = {}
+    for k in pairs(db) do names[#names + 1] = tostring(k) end
+    table.sort(names)
+    for _, k in ipairs(names) do
+        local v = db[k]
+        if type(v) == "table" then
+            local sk, sv = next(v)
+            Out("  %s: %d entries, e.g. [%s] = %s", k, Count(v), tostring(sk), Describe(sv))
+        else
+            Out("  %s = %s", k, Describe(v))
+        end
+    end
+
+    -- Try: what drops in <dungeon>?
+    Out("")
+    Out("Looking for dungeon '%s':", dungeon)
+    local areas = {}
+    for areaId, d in pairs(db.dng or {}) do
+        local name = type(d) == "table" and d[1] or d
+        if type(name) == "string" and name:lower():find(dungeon, 1, true) then
+            areas[areaId] = name
+            Out("  dng[%s] = %s", tostring(areaId), Describe(d))
+        end
+    end
+    if not next(areas) then return Out("  no dungeon with that name in 'dng'.") end
+
+    -- npcs/objects inside it
+    local inside = {}
+    for key, list in pairs(db.ind or {}) do
+        local ids = type(list) == "table" and list or { list }
+        for _, a in pairs(ids) do
+            if areas[a] then inside[key] = true end
+        end
+    end
+    Out("  %d npcs/objects inside (from 'ind')", Count(inside))
+
+    -- items dropped by them (drop[item] = {source, chance, source, chance, ...})
+    local found = 0
+    for itemId, srcs in pairs(db.drop or {}) do
+        if type(srcs) == "table" then
+            for i = 1, #srcs, 2 do
+                local src = srcs[i]
+                local key = type(src) == "number" and ("c" .. src) or tostring(src)
+                if inside[key] or inside[src] then
+                    found = found + 1
+                    if found <= 40 then
+                        local it = db.item and db.item[itemId]
+                        local npcId = tonumber(tostring(key):match("%d+"))
+                        local npc = db.npc and npcId and db.npc[npcId]
+                        Out("  item %s %s from %s (%s), chance %s/10000", tostring(itemId), Describe(it),
+                            tostring(key), Describe(npc), tostring(srcs[i + 1]))
+                    end
+                    break
+                end
+            end
+        end
+    end
+    Out("  %d items drop inside%s", found, found > 40 and " (first 40 shown)" or "")
+end
+
+function ns.DBTest(dungeon) RunInWindow("ForeverDB test", DBTestBody, dungeon) end

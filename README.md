@@ -67,6 +67,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost ejtest [dungeon]`: diagnostic, shows whether the Adventure Guide's loot data is readable
+- `/fost dbtest [dungeon]`: diagnostic, shows whether the ForeverDB data addon is installed and what's in it
 - `/fost version`
 
 ## Custom poke sound
