@@ -1,0 +1,28 @@
+## Interface: 16001
+## Title: Fostbraedr
+## Notes: Family chronicle and rivalry tracker for brothers playing together.
+## Author: Alexander Rickardsson
+## Version: 0.1.0
+## SavedVariables: FostbraedrDB
+## IconTexture: Interface\Icons\Achievement_Zone_HowlingFjord_01
+## AddonCompartmentFunc: Fostbraedr_OnAddonCompartmentClick
+## AddonCompartmentFuncOnEnter: Fostbraedr_OnAddonCompartmentEnter
+## AddonCompartmentFuncOnLeave: Fostbraedr_OnAddonCompartmentLeave
+
+Core.lua
+People.lua
+Theme.lua
+Serialize.lua
+Comm.lua
+Chronicle.lua
+Sync.lua
+Family.lua
+Rivalry.lua
+Toast.lua
+UI.lua
+ChronicleUI.lua
+RivalryUI.lua
+FamilyUI.lua
+SettingsUI.lua
+Minimap.lua
+Diagnostics.lua
