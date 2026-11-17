@@ -414,6 +414,8 @@ commands.globals = function(rest)
     if not ok then ns.Print("Globals failed: %s", tostring(err)) end
 end
 
+commands.rolls = function() ns.RollsReport() end
+
 commands.lootquality = function(rest)
     local q = tonumber(rest)
     if q and q >= 0 and q <= 7 then

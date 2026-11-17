@@ -65,6 +65,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost toasts`, `/fost pokes`: turn pop-up notices / receiving pokes on or off
 - `/fost stats`: your quests, gold and time so far
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
+- `/fost rolls`: read the Loot History now and show which item rolls were recorded (and why not)
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost dump Name[.key]`, `/fost globals text`: diagnostics, show the structure of other addons' data tables
 - `/fost version`

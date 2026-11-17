@@ -77,9 +77,32 @@ A.fire("PLAYER_ENTERING_WORLD", false, false)
 sim.Run(5)
 assert(#Entries("roll") == 6)
 
+print("--- a drop listed before its rolls loaded is retried, not lost")
+drops[2780][5] = { lootListID = 5, itemHyperlink = "[Loading]", startTime = 204,
+                   winner = R("Ragnar", 88, 3, true), rollInfos = {} }
+assert(ns.ScanLootHistory() == 0, "nothing yet")
+drops[2780][5].rollInfos = { R("Ragnar", 88, 3, true) }
+assert(ns.ScanLootHistory() == 2, "roll + win once loaded")
+drops[2780][5] = nil
+
 print("--- Rivalry luck uses them")
 local stats = ns.ComputeRivalry(nil, nil)
 local me = stats[ns.People.GroupKey("Ragnar Stormfjord")]
 print("rolls", me.rolls, "luck", me.luck, "wins", me.rollWins)
-assert(me.rolls == 6 and me.rollWins == 3)
+assert(me.rolls == 7 and me.rollWins == 4)
+print("--- /fost rolls report")
+local report
+ns.ShowTextWindow = function(_, text) report = text end
+env.SlashCmdList.FOSTBRAEDR("rolls")
+print(report)
+assert(report:find("Our roll entries: 7, wins: 4") and report:find("already counted"), "report explains")
+
+print("--- login repair: no rolls of our own -> forget processed drops")
+local B = sim.NewClient("Brokk", "Stormfjord", function(f, l) return f .. " " .. l end)
+B.ns.db.lootSeen["0/1/100"] = 1
+B.fire("PLAYER_LOGIN")
+assert(next(B.ns.db.lootSeen) == nil, "wiped when we hold no rolls")
+ns.db.lootSeen["x"] = env.GetServerTime()
+A.fire("PLAYER_LOGIN")
+assert(ns.db.lootSeen["x"], "kept when we already have rolls")
 print("ALL OK")
