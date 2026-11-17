@@ -55,7 +55,8 @@ function ns.ComputeRivalry(from, to)
             local k = e.kind
             if k == "death" then S(e.author).deaths = S(e.author).deaths + 1
             elseif k == "boss" then S(e.author).bosses = S(e.author).bosses + 1
-            elseif k == "loot" then S(e.author).loot = S(e.author).loot + 1
+            elseif k == "loot" then
+                if ns.IsEpicLoot(e) then S(e.author).loot = S(e.author).loot + 1 end
             elseif k == "rollwin" then S(e.author).rollWins = S(e.author).rollWins + 1
             elseif k == "roll" and type(e.roll) == "number" then
                 local s = S(e.author)

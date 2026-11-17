@@ -31,6 +31,9 @@ remote(1, "death") remote(2, "death")
 remote(3, "tally", { quests = 5, gold = 12345, minutes = 30, together = 10 })
 remote(4, "roll", { roll = 10 }) remote(5, "roll", { roll = 20 }) remote(6, "roll", { roll = 30 })
 remote(7, "level", { level = 12 })
+remote(9, "loot", { quality = 2, link = "green" })              -- recorded at a low threshold: not an epic
+remote(10, "loot", { quality = 4, link = "epic" })
+remote(11, "loot", { quality = 1, mount = true, link = "mount" })
 -- an old entry from two weeks ago
 local old = { author = "Thorgrim Stormfjord", n = 8, time = env.GetServerTime() - 20 * 86400, kind = "death" }
 assert(ns.Sync.Accept(old))
@@ -41,6 +44,7 @@ local me, bro = stats[ME], stats[BRO]
 print("me", me.rolls, me.rollSum, me.luck, me.rollWins, me.deaths, me.quests)
 print("bro", bro.rolls, bro.luck, bro.deaths, bro.quests, bro.gold, bro.level)
 assert(me.rolls == 3 and me.rollSum == 150 and me.luck == 50 and me.rollWins == 1 and me.deaths == 1 and me.quests == 1)
+assert(bro.loot == 2, "Epics should count the epic and the mount only, got " .. bro.loot)
 assert(bro.rolls == 3 and bro.luck == 20 and bro.deaths == 2 and bro.quests == 5 and bro.level == 12)
 local aw = ns.ComputeAwards(stats)
 assert(aw.deaths.winners[1] == BRO and aw.deaths.value == 2)

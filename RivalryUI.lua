@@ -14,7 +14,7 @@ local COLUMNS = {
     { title = "Quests",  width = 48,  get = function(_, s) return s.quests end },
     { title = "Gold",    width = 62,  get = function(_, s) return ns.ShortMoney(s.gold) end },
     { title = "Bosses",  width = 46,  get = function(_, s) return s.bosses end },
-    { title = "Epics",   width = 40,  get = function(_, s) return s.loot end, tip = "Notable loot (epics and mounts)" },
+    { title = "Epics",   width = 40,  get = function(_, s) return s.loot end, tip = "Epic or better items, and mounts" },
     { title = "Luck",    width = 46,  get = function(_, s) return s.luck and ("%.0f"):format(s.luck) or "-" end,
       tip = "Average item roll (Need/Greed), at least 3 rolls" },
     { title = "Wins",    width = 40,  get = function(_, s) return s.rollWins end, tip = "Item rolls won" },

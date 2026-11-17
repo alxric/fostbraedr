@@ -146,13 +146,21 @@ local function HandleRollLine(text)
     return false
 end
 
-local function IsNotable(quality, classID, subclassID)
+local function IsMount(classID, subclassID)
     local misc = Enum.ItemClass and Enum.ItemClass.Miscellaneous or 15
     local mount = Enum.ItemMiscellaneousSubclass and Enum.ItemMiscellaneousSubclass.Mount or 5
-    if classID == misc and subclassID == mount then
-        return true
-    end
+    return classID == misc and subclassID == mount
+end
+
+local function IsNotable(quality, classID, subclassID)
+    if IsMount(classID, subclassID) then return true end
     return quality and quality >= (ns.db.settings.lootQuality or 4)
+end
+
+-- What the Rivalry "Epics" column counts: epic or better, or a mount, no matter
+-- what the recording threshold is set to.
+function ns.IsEpicLoot(e)
+    return e.kind == "loot" and ((tonumber(e.quality) or 0) >= 4 or e.mount == true)
 end
 
 ns.On("CHAT_MSG_LOOT", function(text)
@@ -172,7 +180,8 @@ ns.On("CHAT_MSG_LOOT", function(text)
         local _, _, quality, _, _, _, _, _, _, _, _, classID, subclassID = C_Item.GetItemInfo(link)
         if IsNotable(quality, classID, subclassID) then
             local with = ns.BrothersInGroup()
-            ns.AddEntry("loot", { link = link, quality = quality, zone = zone, with = #with > 0 and with or nil })
+            ns.AddEntry("loot", { link = link, quality = quality, mount = IsMount(classID, subclassID) or nil,
+                                  zone = zone, with = #with > 0 and with or nil })
         end
     end)
 end)
