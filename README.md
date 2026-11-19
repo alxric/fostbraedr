@@ -45,15 +45,18 @@ family's. It only changes the displayed text; clicking still targets and whisper
 
 The **Quest items** tab lists the quest items in your bags in three groups:
 
-- **Probably safe to delete:** no quest in your log uses the item, and it's 5 or more levels below you, or
-  it starts a quest you've already done.
-- **Check first:** it starts a quest you haven't done, or no quest uses it but it's near your level (it may
-  be for a later step of a chain you haven't picked up).
+- **Probably safe to delete:** no quest in your log uses or mentions the item, or it starts a quest you've
+  already done, or one 5 or more levels below you.
+- **Check first:** it starts a quest you haven't done, it's a book page, or a quest objective mentions its
+  main word ("Deliver the blade" for Beguiler's Blade).
 - **Keep:** a quest in your log needs it (objective, usable item, named in the quest text, or the quest it
   starts is in your log).
 
-The game has no link from an item to its quest, so this is a best guess from your quest log and the
-item's level. Nothing is deleted for you: click a row to pick the item up, then drop it outside your bags.
+The game has no link from an item to its quest, so this is a best guess from your quest log. Forever reports
+level 1 for every quest item, so an item's own level can't tell an old leftover from one for the next step of
+a chain; only items that start a quest have a level. Before deleting a leftover from a zone you're still
+questing in, check it yourself. Nothing is deleted for you: click a row to pick the item up, then drop it
+outside your bags.
 
 ## Brothers and alts
 

@@ -36,7 +36,7 @@ QI.ItemIDFromLink = ItemIDFromLink
 -- Quest log
 -------------------------------------------------------------------------------
 -- Every quest in the log: { questID, title, objectives = {lowercase text},
--- text = {lowercase text}, itemIDs = {[id] = true} }. Second value: a problem, if any.
+-- text = {lowercase text}, goal = lowercase "objectives text" or nil, itemIDs = {[id] = true} }. Second value: a problem, if any.
 function QI.ActiveQuests()
     local QL = C_QuestLog
     if not (QL and QL.GetNumQuestLogEntries and QL.GetInfo) then return {}, "the quest log API is missing" end
@@ -62,7 +62,7 @@ function QI.ActiveQuests()
                 local desc, objText = GetQuestLogQuestText(i)
                 desc, objText = Str(desc), Str(objText)
                 if desc then q.text[#q.text + 1] = desc:lower() end
-                if objText then q.text[#q.text + 1] = objText:lower() end
+                if objText then q.text[#q.text + 1] = objText:lower() q.goal = objText:lower() end
                 local key = (desc or "") .. "|" .. (objText or "")
                 if #descriptions > 0 and descriptions[1] ~= key then sameText = false end
                 descriptions[#descriptions + 1] = key
@@ -73,7 +73,7 @@ function QI.ActiveQuests()
     -- If every quest returned the same text, the client ignored the index and gave
     -- us the selected quest's text: matching on it would be wrong, so drop it.
     if #descriptions > 1 and sameText then
-        for _, q in ipairs(list) do q.text = {} end
+        for _, q in ipairs(list) do q.text, q.goal = {}, nil end
     end
     return list
 end
@@ -81,6 +81,29 @@ end
 local function Mentions(texts, name)
     for _, t in ipairs(texts) do
         if t:find(name, 1, true) then return true end
+    end
+    return false
+end
+
+-- The item's main word, for objectives that don't use the full name ("Deliver the
+-- blade" for Beguiler's Blade): the first part of "X of Y", else the last word.
+-- Words under 4 letters are too common to use. Lowercase input.
+function QI.HeadWord(name)
+    name = name:gsub("%s+of%s.*$", "")
+    local head
+    for w in name:gmatch("[%a']+") do
+        if #w >= 4 then head = w end
+    end
+    return head and (head:gsub("'s$", ""))
+end
+
+-- Whole-word match of word (or its plural) in a quest's objectives.
+local function ObjectiveMentionsWord(q, word)
+    local pattern = "[^%a]" .. word:gsub("%p", "%%%0") .. "e?s?[^%a]"
+    local texts = { q.goal }
+    for _, t in ipairs(q.objectives) do texts[#texts + 1] = t end
+    for _, t in ipairs(texts) do
+        if (" " .. t .. " "):find(pattern) then return true end
     end
     return false
 end
@@ -152,10 +175,10 @@ function QI.ItemLevel(item)
         if type(lvl) == "number" and lvl > 0 then return lvl, "quest" end
     end
     if C_Item and C_Item.GetItemInfo then
-        local _, _, _, ilvl, minLevel = C_Item.GetItemInfo(item.itemID)
-        ilvl, minLevel = Val(ilvl), Val(minLevel)
+        -- On Forever quest items report item level 1 (no help), and "required
+        -- level" is the level to use the item, not the quest's: don't use it.
+        local ilvl = Val((select(4, C_Item.GetItemInfo(item.itemID))))
         if type(ilvl) == "number" and ilvl > 1 then return ilvl, "item" end
-        if type(minLevel) == "number" and minLevel > 1 then return minLevel, "item" end
     end
 end
 
@@ -208,6 +231,19 @@ function QI.Classify(item, quests)
             end
         end
     end
+    if name and name:find("page %d+$") then
+        item.group, item.reason = QI.CHECK, "A book page: pages are collected and handed in together"
+        return
+    end
+    local head = name and QI.HeadWord(name)
+    if head then
+        for _, q in ipairs(quests) do
+            if ObjectiveMentionsWord(q, head) then
+                item.group, item.reason = QI.CHECK, ("Maybe for %s (its objective mentions \"%s\")"):format(q.title, head)
+                return
+            end
+        end
+    end
     if not name then
         item.group, item.reason = QI.CHECK, "Item info not loaded yet"
         if C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(item.itemID) end
@@ -218,7 +254,7 @@ function QI.Classify(item, quests)
     elseif item.level then
         item.group, item.reason = QI.CHECK, "No quest in your log uses it, but it's near your level: maybe for a later step of a chain" .. levelText
     else
-        item.group, item.reason = QI.DELETE, "No quest in your log uses it"
+        item.group, item.reason = QI.DELETE, "No quest in your log uses or mentions it"
     end
 end
 

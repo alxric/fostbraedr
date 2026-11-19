@@ -25,19 +25,24 @@ local ITEMS = {
   [8] = { "Linen Cloth", 7, 5 },        -- not a quest item
   [9] = { "Mystery Rock", 12, 0 },      -- leftover, level unknown
   [10] = { "Faded Note", 12, 6 },       -- starts an old quest not done
+  -- from /fost questtest on Forever (2026-11-19): every quest item is item level 1
+  [11] = { "Beguiler's Blade", 12, 1 },  -- "Deliver the blade to ...": a delivery item
+  [12] = { "Green Hills of Stranglethorn - Page 8", 12, 1 },
+  [13] = { "Rune of Opening", 12, 1 },
 }
 -- bag contents: { bag, slot, itemID, count, questInfo }
 local BAGS = {
   { 0, 1, 1, 3 }, { 0, 2, 1, 2 }, { 0, 3, 2, 1 }, { 1, 1, 3, 1, { isQuestItem = true, questID = 300, isActive = false } },
   { 1, 2, 4, 1, { isQuestItem = true, questID = 400, isActive = false } }, { 1, 3, 5, 4 }, { 1, 4, 6, 1 },
   { 2, 1, 7, 1 }, { 2, 2, 8, 20 }, { 2, 3, 9, 1 }, { 2, 4, 10, 1, { questID = 1000, isActive = false } },
+  { 3, 1, 11, 1 }, { 3, 2, 12, 1 }, { 3, 3, 13, 1 },
 }
 local function Find(bag, slot)
   for _, b in ipairs(BAGS) do if b[1] == bag and b[2] == slot then return b end end
 end
 env.NUM_TOTAL_EQUIPPED_BAG_SLOTS = 4
 env.C_Container = {
-  GetContainerNumSlots = function(bag) return bag <= 2 and 4 or 0 end,
+  GetContainerNumSlots = function(bag) return bag <= 3 and 4 or 0 end,
   GetContainerItemInfo = function(bag, slot)
     local b = Find(bag, slot)
     if not b then return nil end
@@ -60,6 +65,8 @@ local QUESTS = {
     desc = "Kill gnolls.", obj = "Bring 8 Gnoll Paws." },
   { title = "Special Delivery", questID = 11, objectives = { { text = "Deliver the package", type = "event" } },
     desc = "Take the Sealed Package to Goldshire.", obj = "Deliver it." },
+  { title = "The Goblin Trader", questID = 12, objectives = { { text = "Deliver the blade to Kreza Darkthorn's acquaintance at the docks east of Rog'mar.", type = "log" } },
+    desc = "While Gur'dok and I continue our work, we did fashion a particular blade.", obj = "Deliver the blade to Kreza Darkthorn's acquaintance." },
   { title = "Secret Quest", questID = SECRET },
 }
 local done = { [300] = true }
@@ -94,12 +101,17 @@ Is("Torn Map", "check", "Treasure Hunt (level 21")
 Is("Kobold Candle", "delete", "it's old (level 8, you're 20)")
 Is("Strange Shard", "check", "later step of a chain")
 Is("Sealed Package", "keep", "Mentioned in Special Delivery")
-Is("Mystery Rock", "delete", "No quest in your log uses it")
+Is("Mystery Rock", "delete", "No quest in your log uses or mentions it")
 Is("Faded Note", "delete", "old quest")
+Is("Beguiler's Blade", "check", "Maybe for The Goblin Trader")
+Is("Green Hills of Stranglethorn - Page 8", "check", "book page")
+Is("Rune of Opening", "delete", "No quest in your log uses or mentions it")
+assert(QI.HeadWord("beguiler's blade") == "blade" and QI.HeadWord("rune of opening") == "rune")
+assert(QI.HeadWord("skull of the coldbringer") == "skull" and QI.HeadWord("big ox") == nil)
 assert(not by["Linen Cloth"], "non-quest items are left out")
 assert(scan.items[1].group == "delete" and scan.items[#scan.items].group == "keep", "sorted delete, check, keep")
-assert(scan.counts.delete == 4 and scan.counts.check == 2 and scan.counts.keep == 3, "counts")
-assert(scan.quests == 2, "headers and secret quests are skipped")
+assert(scan.counts.delete == 5 and scan.counts.check == 4 and scan.counts.keep == 3, "counts")
+assert(scan.quests == 3, "headers and secret quests are skipped")
 
 -- an active starter quest keeps its item
 QUESTS[#QUESTS + 1] = { title = "Treasure Hunt", questID = 400, objectives = {} }
