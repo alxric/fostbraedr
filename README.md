@@ -47,8 +47,9 @@ The **Quest items** tab lists the quest items in your bags in three groups:
 
 - **Probably safe to delete:** no quest in your log uses or mentions the item, or it starts a quest you've
   already done, or one 5 or more levels below you.
-- **Check first:** it starts a quest you haven't done, it's a book page, or a quest objective mentions its
-  main word ("Deliver the blade" for Beguiler's Blade).
+- **Check first:** it starts a quest you haven't done, it's a book page, a quest objective mentions its
+  main word ("Deliver the blade" for Beguiler's Blade), or it has a "Use:" effect (a tool like the Goblin
+  Transponder, which teleports you into Gadgetzan).
 - **Keep:** a quest in your log needs it (objective, usable item, named in the quest text, or the quest it
   starts is in your log).
 

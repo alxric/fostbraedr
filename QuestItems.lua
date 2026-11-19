@@ -244,6 +244,13 @@ function QI.Classify(item, quests)
             end
         end
     end
+    -- a quest item with a "Use:" effect may be a tool you keep (Goblin Transponder
+    -- teleports you into Gadgetzan) rather than leftover loot
+    local spell = C_Item and C_Item.GetItemSpell and Str((C_Item.GetItemSpell(item.itemID)))
+    if spell then
+        item.group, item.reason = QI.CHECK, ("Has a use (%s): it may be a tool, not leftover loot"):format(spell)
+        return
+    end
     if not name then
         item.group, item.reason = QI.CHECK, "Item info not loaded yet"
         if C_Item and C_Item.RequestLoadItemDataByID then C_Item.RequestLoadItemDataByID(item.itemID) end

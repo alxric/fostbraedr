@@ -141,6 +141,7 @@ local function QuestTestBody(Out)
         Out("%s x%d (id %d, bag %d slot %d)", tostring(item.name), item.count, item.itemID, item.bag, item.slot)
         Out("    questInfo: isQuestItem=%s questID=%s isActive=%s, classID=%s, item level=%s, required level=%s",
             Show(q.isQuestItem), Show(q.questID), Show(q.isActive), Show(classID), Show(ilvl), Show(minLevel))
+        if C_Item and C_Item.GetItemSpell then Out("    use effect: %s", Show((C_Item.GetItemSpell(item.itemID)))) end
         Out("    -> %s: %s", item.group, item.reason)
     end
     Out("%d quest item(s), %d quest(s) in the log.", #scan.items, scan.quests)

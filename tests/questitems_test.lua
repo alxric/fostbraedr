@@ -29,13 +29,14 @@ local ITEMS = {
   [11] = { "Beguiler's Blade", 12, 1 },  -- "Deliver the blade to ...": a delivery item
   [12] = { "Green Hills of Stranglethorn - Page 8", 12, 1 },
   [13] = { "Rune of Opening", 12, 1 },
+  [14] = { "Goblin Transponder", 12, 1 },  -- teleports you into Gadgetzan: a tool, not a leftover
 }
 -- bag contents: { bag, slot, itemID, count, questInfo }
 local BAGS = {
   { 0, 1, 1, 3 }, { 0, 2, 1, 2 }, { 0, 3, 2, 1 }, { 1, 1, 3, 1, { isQuestItem = true, questID = 300, isActive = false } },
   { 1, 2, 4, 1, { isQuestItem = true, questID = 400, isActive = false } }, { 1, 3, 5, 4 }, { 1, 4, 6, 1 },
   { 2, 1, 7, 1 }, { 2, 2, 8, 20 }, { 2, 3, 9, 1 }, { 2, 4, 10, 1, { questID = 1000, isActive = false } },
-  { 3, 1, 11, 1 }, { 3, 2, 12, 1 }, { 3, 3, 13, 1 },
+  { 3, 1, 11, 1 }, { 3, 2, 12, 1 }, { 3, 3, 13, 1 }, { 3, 4, 14, 1, { isQuestItem = true, isActive = false } },
 }
 local function Find(bag, slot)
   for _, b in ipairs(BAGS) do if b[1] == bag and b[2] == slot then return b end end
@@ -58,6 +59,8 @@ env.C_Container = {
 env.C_Item = {
   GetItemInfoInstant = function(id) return id, "x", "y", "", 1, ITEMS[id][2], 0 end,
   GetItemInfo = function(id) local it = ITEMS[id] return it[1], nil, 1, it[3], 1 end,
+  -- Signal Flare has a use too, but the quest's usable item wins
+  GetItemSpell = function(id) if id == 14 then return "Teleport to Gadgetzan", 123 elseif id == 2 then return "Flare", 5 end end,
 }
 local QUESTS = {
   { title = "Elwynn", isHeader = true },
@@ -105,12 +108,13 @@ Is("Mystery Rock", "delete", "No quest in your log uses or mentions it")
 Is("Faded Note", "delete", "old quest")
 Is("Beguiler's Blade", "check", "Maybe for The Goblin Trader")
 Is("Green Hills of Stranglethorn - Page 8", "check", "book page")
+Is("Goblin Transponder", "check", "Has a use (Teleport to Gadgetzan)")
 Is("Rune of Opening", "delete", "No quest in your log uses or mentions it")
 assert(QI.HeadWord("beguiler's blade") == "blade" and QI.HeadWord("rune of opening") == "rune")
 assert(QI.HeadWord("skull of the coldbringer") == "skull" and QI.HeadWord("big ox") == nil)
 assert(not by["Linen Cloth"], "non-quest items are left out")
 assert(scan.items[1].group == "delete" and scan.items[#scan.items].group == "keep", "sorted delete, check, keep")
-assert(scan.counts.delete == 5 and scan.counts.check == 4 and scan.counts.keep == 3, "counts")
+assert(scan.counts.delete == 5 and scan.counts.check == 5 and scan.counts.keep == 3, "counts")
 assert(scan.quests == 3, "headers and secret quests are skipped")
 
 -- an active starter quest keeps its item
