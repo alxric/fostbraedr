@@ -293,6 +293,7 @@ commands.help = function()
     print("  /fost toasts - pop-up notices on/off")
     print("  /fost pokes - receiving pokes on/off")
     print("  /fost stats - your quests, gold and time so far")
+    print("  /fost questtest - what the game tells us about your quests and quest items")
     print("  /fost lootquality N - loot quality to record (4 = epic)")
     print("  /fost version")
 end
@@ -402,6 +403,11 @@ end
 commands.loottest = function()
     local ok, err = pcall(ns.LootTest)
     if not ok then ns.Print("Loot test failed: %s", tostring(err)) end
+end
+
+commands.questtest = function()
+    local ok, err = pcall(ns.QuestTest)
+    if not ok then ns.Print("Quest test failed: %s", tostring(err)) end
 end
 
 commands.dump = function(rest)

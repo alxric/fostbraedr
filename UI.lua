@@ -12,6 +12,7 @@ local TABS = {
     { key = "rivalry",   title = "Rivalry",   icon = "Interface\\Icons\\Ability_Warrior_BattleShout", build = "BuildRivalryTab" },
     { key = "family",    title = "Family",    icon = "Interface\\Icons\\INV_Misc_GroupNeedMore", build = "BuildFamilyTab" },
     { key = "frames",    title = "Frames",    icon = "Interface\\Icons\\INV_Misc_Spyglass_03", build = "BuildFramesTab" },
+    { key = "questitems", title = "Quest items", icon = "Interface\\Icons\\INV_Misc_Bag_08", build = "BuildQuestItemsTab" },
     { key = "settings",  title = "Settings",  icon = "Interface\\Icons\\INV_Misc_Gear_01", build = "BuildSettingsTab" },
 }
 

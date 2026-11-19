@@ -31,10 +31,10 @@ env.SOUNDKIT = {}
 env.PlaySound = function() end
 env.GameTooltip = Mock("GameTooltip")
 env.Minimap = Mock("Minimap")
-local rowInit
+local rowInits = {} -- one per list, in tab build order
 env.CreateScrollBoxListLinearView = function()
     local v = Mock("view")
-    rawset(v, "SetElementInitializer", function(_, _, fn) rowInit = fn end)
+    rawset(v, "SetElementInitializer", function(_, _, fn) rowInits[#rowInits + 1] = fn end)
     return v
 end
 env.ScrollUtil = { InitScrollBoxListWithScrollBar = function() end }
@@ -47,7 +47,7 @@ env.C_DateAndTime = { GetSecondsUntilWeeklyReset = function() return 86400 end }
 env.PlaySoundFile = function() return false end
 env.RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 env.LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior" }
-for _, f in ipairs({ "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "NamesUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
+for _, f in ipairs({ "QuestItems.lua", "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "NamesUI.lua", "QuestItemsUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
     local ch = assert(loadfile("./" .. f)); setfenv(ch, env); ch("Fostbraedr", ns)
 end
 A.fire("PLAYER_LOGIN")
@@ -65,6 +65,7 @@ frame.scripts.OnShow()
 -- render chronicle rows through the initializer
 local rows = ns.BuildChronicleRows()
 assert(#rows == 4, "expected 4 visible rows, got " .. #rows)
+local rowInit = rowInits[1] -- the Chronicle tab is built first
 assert(rowInit, "row initializer not registered")
 for _, r in ipairs(rows) do
     local rowFrame = Mock("row")
@@ -107,6 +108,19 @@ assert(ns.AddBrother("Brokk Stormfjord") == "Brokk Stormfjord")
 assert(ns.AddBrother("brokk stormfjord") == nil, "duplicate should be refused")
 assert(ns.AddBrother("Ragnar Stormfjord") == nil, "adding yourself should be refused")
 assert(ns.RemoveBrother("BROKK STORMFJORD") == "Brokk Stormfjord")
+-- quest items tab: rows with a heading and an item, tooltip, click
+local qrows = ns.BuildQuestItemRows({ counts = { delete = 1 }, items = {
+    { group = "delete", itemID = 5, name = "Candle", count = 2, bag = 0, slot = 1, reason = "old" } } })
+assert(#qrows == 2 and qrows[1].heading, "heading row then item row")
+env.ClearCursor = function() end
+env.C_Container = { GetContainerItemInfo = function() return { itemID = 5 } end, PickupContainerItem = function() end }
+for _, r in ipairs(qrows) do
+    local rowFrame = Mock("row")
+    rowInits[#rowInits](rowFrame, r) -- Quest items is the last tab with a list
+    rowFrame.scripts.OnEnter(rowFrame)
+    rowFrame.scripts.OnClick(rowFrame)
+    rowFrame.scripts.OnLeave(rowFrame)
+end
 -- copyable text window
 ns.ShowTextWindow("Test", "line 1\n|cnIQ4:|Hitem:5::::|h[X]|h|r | y")
 ns.ShowTextWindow("Again", "reuse")

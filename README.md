@@ -41,6 +41,20 @@ The **Frames** tab can show only first names ("Thorgrim" instead of "Thorgrim St
 raid-style (compact) party and raid frames and on the classic party frames, for all surnames or only your
 family's. It only changes the displayed text; clicking still targets and whispers the full name.
 
+## Quest items
+
+The **Quest items** tab lists the quest items in your bags in three groups:
+
+- **Probably safe to delete:** no quest in your log uses the item, and it's 5 or more levels below you, or
+  it starts a quest you've already done.
+- **Check first:** it starts a quest you haven't done, or no quest uses it but it's near your level (it may
+  be for a later step of a chain you haven't picked up).
+- **Keep:** a quest in your log needs it (objective, usable item, named in the quest text, or the quest it
+  starts is in your log).
+
+The game has no link from an item to its quest, so this is a best guess from your quest log and the
+item's level. Nothing is deleted for you: click a row to pick the item up, then drop it outside your bags.
+
 ## Brothers and alts
 
 Add **one character per brother** (Settings tab, or `/fost brother add`). When his addon says hello it
@@ -66,6 +80,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost stats`: your quests, gold and time so far
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
 - `/fost rolls`: read the Loot History now and show which item rolls were recorded (and why not)
+- `/fost questtest`: diagnostic, shows what the game says about your quests and quest items
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost dump Name[.key]`, `/fost globals text`: diagnostics, show the structure of other addons' data tables
 - `/fost version`

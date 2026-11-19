@@ -3,6 +3,8 @@
 -- /fost loottest: dumps the game's Loot History (C_LootHistory) and reports which
 -- values are readable and which are secret. Run it after a dungeon with item rolls,
 -- once inside and once after leaving, to see whether roll tracking can use it.
+--
+-- /fost questtest: what the quest and bag APIs return (for the Quest items tab).
 local ADDON, ns = ...
 
 -- Run a test body that writes lines with Out(fmt, ...), then show everything in
@@ -79,6 +81,72 @@ local function LootTestBody(Out)
 end
 
 function ns.LootTest() RunInWindow("Loot test", LootTestBody) end
+
+-------------------------------------------------------------------------------
+-- /fost questtest: what the quest log and bag APIs return, so we can check the
+-- Quest items tab against the live client. Run it with a few quests in your log
+-- and some quest items in your bags.
+-------------------------------------------------------------------------------
+local function QuestTestBody(Out)
+    local QL, C = C_QuestLog or {}, C_Container or {}
+    local fns = {}
+    for _, f in ipairs({ "GetNumQuestLogEntries", "GetInfo", "GetQuestObjectives", "GetTitleForQuestID",
+                         "IsQuestFlaggedCompleted", "GetQuestDifficultyLevel" }) do
+        fns[#fns + 1] = f .. (QL[f] and "" or " (missing)")
+    end
+    Out("C_QuestLog: %s", table.concat(fns, ", "))
+    fns = {}
+    for _, f in ipairs({ "GetContainerNumSlots", "GetContainerItemInfo", "GetContainerItemQuestInfo", "PickupContainerItem" }) do
+        fns[#fns + 1] = f .. (C[f] and "" or " (missing)")
+    end
+    Out("C_Container: %s", table.concat(fns, ", "))
+    Out("GetQuestLogSpecialItemInfo=%s, GetQuestLogQuestText=%s, C_Item.GetItemInfoInstant=%s, bags 0-%s",
+        tostring(GetQuestLogSpecialItemInfo ~= nil), tostring(GetQuestLogQuestText ~= nil),
+        tostring(C_Item and C_Item.GetItemInfoInstant ~= nil), tostring(NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS))
+    Out("Your level: %s", Show(UnitLevel("player")))
+
+    Out("")
+    Out("QUEST LOG")
+    if QL.GetNumQuestLogEntries and QL.GetInfo then
+        for i = 1, QL.GetNumQuestLogEntries() or 0 do
+            local info = QL.GetInfo(i) or {}
+            if info.isHeader then
+                Out("[%d] header: %s", i, Show(info.title))
+            else
+                Out("[%d] %s (id %s, level %s)", i, Show(info.title), Show(info.questID), Show(info.level))
+                if QL.GetQuestObjectives and info.questID then
+                    for _, o in ipairs(QL.GetQuestObjectives(info.questID) or {}) do
+                        Out("    objective: %q type=%s %s/%s", tostring(o.text), Show(o.type), Show(o.numFulfilled), Show(o.numRequired))
+                    end
+                end
+                if GetQuestLogSpecialItemInfo then Out("    usable item: %s", Show((GetQuestLogSpecialItemInfo(i)))) end
+                if GetQuestLogQuestText then
+                    local desc, obj = GetQuestLogQuestText(i)
+                    Out("    text: %s", type(desc) == "string" and not ns.IsSecret(desc) and desc:sub(1, 70) or Show(desc))
+                    Out("    objectives text: %s", type(obj) == "string" and not ns.IsSecret(obj) and obj:sub(1, 70) or Show(obj))
+                end
+            end
+        end
+    end
+
+    Out("")
+    Out("QUEST ITEMS IN BAGS (as the tab sorts them)")
+    local scan = ns.QuestItems.Scan()
+    if scan.problem then Out("Problem: %s", scan.problem) end
+    for _, item in ipairs(scan.items) do
+        local q = C.GetContainerItemQuestInfo and C.GetContainerItemQuestInfo(item.bag, item.slot) or {}
+        local classID = C_Item and C_Item.GetItemInfoInstant and select(6, C_Item.GetItemInfoInstant(item.itemID))
+        local ilvl, minLevel
+        if C_Item and C_Item.GetItemInfo then ilvl, minLevel = select(4, C_Item.GetItemInfo(item.itemID)) end
+        Out("%s x%d (id %d, bag %d slot %d)", tostring(item.name), item.count, item.itemID, item.bag, item.slot)
+        Out("    questInfo: isQuestItem=%s questID=%s isActive=%s, classID=%s, item level=%s, required level=%s",
+            Show(q.isQuestItem), Show(q.questID), Show(q.isActive), Show(classID), Show(ilvl), Show(minLevel))
+        Out("    -> %s: %s", item.group, item.reason)
+    end
+    Out("%d quest item(s), %d quest(s) in the log.", #scan.items, scan.quests)
+end
+
+function ns.QuestTest() RunInWindow("Quest test", QuestTestBody) end
 
 -------------------------------------------------------------------------------
 -- Helpers for /fost dump and /fost globals
