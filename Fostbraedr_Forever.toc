@@ -2,7 +2,7 @@
 ## Title: Fostbraedr
 ## Notes: Family chronicle and rivalry tracker for brothers playing together.
 ## Author: Alexander Rickardsson
-## Version: 0.4.0
+## Version: 0.5.0
 ## SavedVariables: FostbraedrDB
 ## IconTexture: Interface\Icons\Achievement_Zone_HowlingFjord_01
 ## AddonCompartmentFunc: Fostbraedr_OnAddonCompartmentClick
@@ -21,6 +21,7 @@ Family.lua
 Names.lua
 Rivalry.lua
 QuestItems.lua
+Gear.lua
 Toast.lua
 UI.lua
 ChronicleUI.lua
@@ -28,6 +29,7 @@ RivalryUI.lua
 FamilyUI.lua
 NamesUI.lua
 QuestItemsUI.lua
+GearUI.lua
 SettingsUI.lua
 Minimap.lua
 Diagnostics.lua

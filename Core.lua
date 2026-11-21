@@ -30,6 +30,7 @@ local DEFAULTS = {
     peers = {},             -- ["First Last"] = { lastSeen, version, level, zone, class } (from sync)
     account = {},           -- our identity: { id, name } (see People.lua)
     people = {},            -- brothers' accounts: [id] = { name, chars, lastSeen }
+    gear = {},              -- ["First Last"] = form swap sets for that character (see Gear.lua)
 }
 
 -------------------------------------------------------------------------------
@@ -294,6 +295,7 @@ commands.help = function()
     print("  /fost pokes - receiving pokes on/off")
     print("  /fost stats - your quests, gold and time so far")
     print("  /fost questtest - what the game tells us about your quests and quest items")
+    print("  /fost geartest [debug] - log of recent gear swaps (debug: also in chat)")
     print("  /fost lootquality N - loot quality to record (4 = epic)")
     print("  /fost version")
 end
@@ -408,6 +410,14 @@ end
 commands.questtest = function()
     local ok, err = pcall(ns.QuestTest)
     if not ok then ns.Print("Quest test failed: %s", tostring(err)) end
+end
+
+commands.geartest = function(rest)
+    if rest == "debug" then
+        ns.db.settings.gearDebug = not ns.db.settings.gearDebug
+        return ns.Print("Gear swap lines in chat: %s", ns.db.settings.gearDebug and "on" or "off")
+    end
+    ns.Gear.ShowLog()
 end
 
 commands.dump = function(rest)

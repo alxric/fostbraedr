@@ -59,6 +59,18 @@ a chain; only items that start a quest have a level. Before deleting a leftover 
 questing in, check it yourself. Nothing is deleted for you: click a row to pick the item up, then drop it
 outside your bags.
 
+## Gear swap (druids)
+
+The **Gear** tab keeps two sets of weapons and trinkets: one for **cat form** and one for **every other form**
+(caster, bear, travel, ...). Put on your cat gear and click **Save what I'm wearing** under *Cat form*, do the
+same with your healing gear under *Every other form*, then switch on **Swap weapons** and/or **Swap trinkets**.
+From then on, changing form puts on the matching set. Each character has its own sets.
+
+If the game refuses a swap (mid-cast, or trinkets in combat), the addon tries again for a few seconds, as soon
+as your cast ends, and when combat ends. **Wear now** puts a set on straight away and keeps it on until your next
+form change. `/fost geartest` shows what happened on each swap: how long it took, and the global cooldown before
+and after. Other classes see a short note in the tab; nothing swaps for them.
+
 ## Brothers and alts
 
 Add **one character per brother** (Settings tab, or `/fost brother add`). When his addon says hello it
@@ -85,6 +97,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
 - `/fost rolls`: read the Loot History now and show which item rolls were recorded (and why not)
 - `/fost questtest`: diagnostic, shows what the game says about your quests and quest items
+- `/fost geartest [debug]`: log of recent gear swaps (`debug` also prints each line in chat)
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost dump Name[.key]`, `/fost globals text`: diagnostics, show the structure of other addons' data tables
 - `/fost version`
