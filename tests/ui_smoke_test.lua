@@ -127,6 +127,7 @@ for _, tab in ipairs(frame.tabs) do if tab.def.key == "gear" then gear = tab end
 assert(gear, "gear tab missing")
 gear.panel:Refresh()
 env.UnitClass = function() return "Druid", "DRUID" end
+ns.Gear.ForgetClass()
 env.GetShapeshiftFormID = function() return 1 end
 gear.panel:Refresh()
 env.GetInventoryItemID = function(_, slot) return slot == 16 and 101 or nil end
@@ -135,6 +136,7 @@ ns.Gear.SaveCurrent("cat")
 gear.panel:Refresh()
 ns.Fire("GEAR_CHANGED")
 env.UnitClass = function() return "Warrior", "WARRIOR" end
+ns.Gear.ForgetClass()
 -- copyable text window
 ns.ShowTextWindow("Test", "line 1\n|cnIQ4:|Hitem:5::::|h[X]|h|r | y")
 ns.ShowTextWindow("Again", "reuse")

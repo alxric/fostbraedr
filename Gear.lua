@@ -45,10 +45,16 @@ function G.Data(create)
     return d
 end
 
+-- Your class can't change, so remember it: in combat it might be unreadable.
+local myClass
 function G.IsDruid()
-    local _, class = UnitClass("player")
-    return Val(class) == "DRUID"
+    if not myClass then
+        local _, class = UnitClass("player")
+        myClass = Val(class)
+    end
+    return myClass == "DRUID"
 end
+function G.ForgetClass() myClass = nil end -- tests only
 
 -- Only druids, with at least one group switched on. Other classes' stances and
 -- stealth fire the same events; they must do nothing.
@@ -83,8 +89,8 @@ end
 -------------------------------------------------------------------------------
 -- Log, for /fost geartest
 -------------------------------------------------------------------------------
+-- Kept in the saved variables (ns.db.gearLog) so it survives /reload and logout.
 G.log = {}
-local t0
 
 local function GCDLeft()
     local start, duration
@@ -107,8 +113,11 @@ local function Casting()
 end
 
 local function Log(line)
-    t0 = t0 or GetTime()
-    local entry = ("%7.2f  %s"):format(GetTime() - t0, line)
+    if ns.db then
+        ns.db.gearLog = ns.db.gearLog or {}
+        G.log = ns.db.gearLog
+    end
+    local entry = ("%s  %s"):format(date("%H:%M:%S"), line)
     table.insert(G.log, entry)
     if #G.log > LOG_SIZE then table.remove(G.log, 1) end
     if ns.db and ns.db.settings.gearDebug then ns.Print("gear: %s", line) end
@@ -131,12 +140,24 @@ ns.OnOptional("UI_ERROR_MESSAGE", function(_, message)
     if message then lastError = { text = message, time = GetTime() } end
 end)
 
+-- WoW blocks protected calls from addons (often only in combat) and says so with
+-- these events: the strongest sign that equipping is off limits to addons.
+for _, event in ipairs({ "ADDON_ACTION_BLOCKED", "ADDON_ACTION_FORBIDDEN" }) do
+    ns.OnOptional(event, function(addon, func)
+        if addon ~= ADDON then return end
+        lastError = { text = ("%s: %s"):format(event, tostring(func)), time = GetTime() }
+        Log("the game blocked " .. tostring(func) .. " (" .. event .. ")")
+    end)
+end
+
 -------------------------------------------------------------------------------
 -- Equipping
 -------------------------------------------------------------------------------
 local function Equip(item, slot)
     local fn = (C_Item and C_Item.EquipItemByName) or EquipItemByName
-    if fn then fn(item, slot) end
+    if not fn then return "no EquipItemByName in this client" end
+    local ok, err = pcall(fn, item, slot)
+    if not ok then return tostring(err) end
 end
 
 local function HaveItem(id)
@@ -184,7 +205,8 @@ function G.Apply(setKey, why, all)
             Log(("%s: equip %s in %s (%s)"):format(why, name, m.label, State()))
             lastError = nil
             local started = GetTime()
-            Equip(m.want.link or m.want.id, m.slot)
+            local err = Equip(m.want.link or m.want.id, m.slot)
+            if err then Log("  equip call failed: " .. err) end
             tried = tried + 1
             C_Timer.After(VERIFY_AFTER, function()
                 local now = Val(GetInventoryItemID("player", m.slot))
@@ -249,6 +271,7 @@ local lastSet
 ns.OnOptional("UPDATE_SHAPESHIFT_FORM", function()
     if not Active() then return end
     local setKey = G.WantedSet()
+    if not setKey then return Log("form change: can't read your form right now") end
     if setKey == lastSet then return end -- fires for more than form changes
     lastSet = setKey
     G.hold = false
@@ -271,13 +294,16 @@ ns.OnOptional("PLAYER_REGEN_ENABLED", function()
     if setKey and #G.Missing(setKey) > 0 then ApplyWithRetries("combat ended") end
 end)
 
-ns.On("PLAYER_LOGIN", function() if G.IsDruid() then lastSet = G.WantedSet() end end)
+ns.On("PLAYER_LOGIN", function()
+    if ns.db.gearLog then G.log = ns.db.gearLog end
+    if G.IsDruid() then lastSet = G.WantedSet() end
+end)
 
 -- /fost geartest: the log of recent swaps, in the copyable window.
 function G.ShowLog()
     local lines = {
         ("Gear swap log (form now: %s, druid=%s, %s)"):format(tostring(G.WantedSet()), tostring(G.IsDruid()), State()),
-        "Each line: seconds since the first entry, what happened. 'gcd left' is the global cooldown.",
+        "Each line: time, what happened. 'gcd left' is the global cooldown. Kept across /reload.",
         "",
     }
     for _, l in ipairs(G.log) do lines[#lines + 1] = l end

@@ -53,6 +53,7 @@ assert(A.shown:find("druid=false"), "the log opens for other classes too")
 
 -- 2. Druid: save both sets (cat = dagger + trinket A; other = mace + shield + trinket B).
 class = "DRUID"
+G.ForgetClass()
 G.SaveCurrent("other")
 worn[16], worn[17], worn[13] = DAGGER, nil, TRINKET_A
 bags = { [MACE] = 1, [SHIELD] = 1, [TRINKET_B] = 1 }
@@ -114,5 +115,28 @@ local SECRET = {}
 env.issecretvalue = function(v) return v == SECRET end
 env.GetShapeshiftFormID = function() return SECRET end
 A.fire("UPDATE_SHAPESHIFT_FORM") sim.Run(1)
+A.fire("UPDATE_SHAPESHIFT_FORM") sim.Run(1)
 assert(G.WantedSet() == nil)
+local unreadable = 0
+for _, l in ipairs(G.log) do if l:find("can't read your form") then unreadable = unreadable + 1 end end
+assert(unreadable == 2, "every unreadable form change is logged, got " .. unreadable)
+
+-- 8. An unreadable class in combat doesn't turn the druid off.
+env.UnitClass = function() return SECRET, SECRET end
+assert(G.IsDruid(), "class remembered from before")
+
+-- 9. A blocked equip call is logged, and the log is in the saved variables.
+env.GetShapeshiftFormID = function() return form ~= 0 and form or nil end
+d.sets.cat[16] = { id = DAGGER }
+worn[16] = MACE bags[DAGGER] = 1
+env.C_Item.EquipItemByName = function()
+  A.fire("ADDON_ACTION_BLOCKED", "Fostbraedr", "EquipItemByName()")
+  error("blocked")
+end
+Shift(0) Shift(1) sim.Run(1)
+G.ShowLog()
+assert(A.shown:find("the game blocked EquipItemByName"), "blocked action logged")
+assert(A.shown:find("equip call failed"), "failed call logged")
+assert(ns.db.gearLog == G.log and #ns.db.gearLog > 0, "log is saved")
+assert(#G.log <= 60, "log stays short")
 print("ALL OK")
