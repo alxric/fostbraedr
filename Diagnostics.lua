@@ -91,7 +91,7 @@ local function QuestTestBody(Out)
     local QL, C = C_QuestLog or {}, C_Container or {}
     local fns = {}
     for _, f in ipairs({ "GetNumQuestLogEntries", "GetInfo", "GetQuestObjectives", "GetTitleForQuestID",
-                         "IsQuestFlaggedCompleted", "GetQuestDifficultyLevel" }) do
+                         "IsQuestFlaggedCompleted", "GetQuestDifficultyLevel", "IsComplete" }) do
         fns[#fns + 1] = f .. (QL[f] and "" or " (missing)")
     end
     Out("C_QuestLog: %s", table.concat(fns, ", "))
@@ -103,7 +103,8 @@ local function QuestTestBody(Out)
     Out("GetQuestLogSpecialItemInfo=%s, GetQuestLogQuestText=%s, C_Item.GetItemInfoInstant=%s, bags 0-%s",
         tostring(GetQuestLogSpecialItemInfo ~= nil), tostring(GetQuestLogQuestText ~= nil),
         tostring(C_Item and C_Item.GetItemInfoInstant ~= nil), tostring(NUM_TOTAL_EQUIPPED_BAG_SLOTS or NUM_BAG_SLOTS))
-    Out("Your level: %s", Show(UnitLevel("player")))
+    Out("Your level: %s, XP %s of %s, GetQuestLogRewardXP=%s", Show(UnitLevel("player")), Show(UnitXP and UnitXP("player")),
+        Show(UnitXPMax and UnitXPMax("player")), tostring(GetQuestLogRewardXP ~= nil))
 
     Out("")
     Out("QUEST LOG")
@@ -114,6 +115,11 @@ local function QuestTestBody(Out)
                 Out("[%d] header: %s", i, Show(info.title))
             else
                 Out("[%d] %s (id %s, level %s)", i, Show(info.title), Show(info.questID), Show(info.level))
+                if info.questID then
+                    Out("    complete: %s, reward XP: %s",
+                        QL.IsComplete and Show(QL.IsComplete(info.questID)) or "?",
+                        GetQuestLogRewardXP and Show(GetQuestLogRewardXP(info.questID)) or "?")
+                end
                 if QL.GetQuestObjectives and info.questID then
                     for _, o in ipairs(QL.GetQuestObjectives(info.questID) or {}) do
                         Out("    objective: %q type=%s %s/%s", tostring(o.text), Show(o.type), Show(o.numFulfilled), Show(o.numRequired))
@@ -145,6 +151,11 @@ local function QuestTestBody(Out)
         Out("    -> %s: %s", item.group, item.reason)
     end
     Out("%d quest item(s), %d quest(s) in the log.", #scan.items, scan.quests)
+    local bonus, count = ns.TurnInXP()
+    local left, n = ns.MyTurnInLeft()
+    Out("")
+    Out("TURN-INS: %d completed quest(s) worth %d XP. Family tab: %s",
+        count, bonus, ns.XPText(UnitLevel("player"), ns.MyXPLeft(), left, n))
 end
 
 function ns.QuestTest() RunInWindow("Quest test", QuestTestBody) end

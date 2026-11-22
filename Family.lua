@@ -3,6 +3,8 @@
 -- Messages:
 --   ST   { t, st = status, hw } status changed, or 4-minute heartbeat (with hw, see Sync)
 --        st.xpLeft: whole % of this level's XP still to go (nil at max level)
+--        st.tiLeft, st.tiN: % left once the tiN completed quests are handed in
+--                           (0 = enough to level; both nil without completed quests)
 --   BYE  { t }                 sent at logout (or /reload), best effort
 --   POKE { t, m }              optional short message
 local ADDON, ns = ...
@@ -47,10 +49,51 @@ function ns.MyXPLeft()
     return 100 - math.floor(xp * 100 / max)
 end
 
--- ", 37% left to 44" for the Family tab, or "" when unknown.
-function ns.XPLeftText(level, xpLeft)
-    if not (tonumber(level) and tonumber(xpLeft)) then return "" end
-    return (", %d%% left to %d"):format(xpLeft, level + 1)
+-- XP from completed quests in the log that are waiting to be handed in, and how
+-- many there are. GetQuestLogRewardXP(questID) is the XP for handing one in.
+function ns.TurnInXP()
+    local QL = C_QuestLog
+    if not (QL and QL.GetNumQuestLogEntries and QL.GetInfo and QL.IsComplete and GetQuestLogRewardXP) then return 0, 0 end
+    local total, count = 0, 0
+    for i = 1, QL.GetNumQuestLogEntries() or 0 do
+        local info = QL.GetInfo(i)
+        local id = info and NotSecret(info.questID)
+        if id and not NotSecret(info.isHeader) and NotSecret(QL.IsComplete(id)) then
+            local xp = NotSecret(GetQuestLogRewardXP(id))
+            if type(xp) == "number" and xp > 0 then
+                total, count = total + xp, count + 1
+            end
+        end
+    end
+    return total, count
+end
+
+-- % left once completed quests are handed in (0 = enough to level), and how
+-- many quests; nil when there's nothing to hand in or XP can't be read.
+function ns.MyTurnInLeft()
+    if not (UnitXP and UnitXPMax) then return nil end
+    local xp, max = NotSecret(UnitXP("player")), NotSecret(UnitXPMax("player"))
+    if type(xp) ~= "number" or type(max) ~= "number" or max <= 0 then return nil end
+    local bonus, count = ns.TurnInXP()
+    if count == 0 then return nil end
+    if xp + bonus >= max then return 0, count end
+    return 100 - math.floor((xp + bonus) * 100 / max), count
+end
+
+-- "37% left to 44  ·  12% after 3 turn-ins" for the Family tab, or "" when unknown.
+function ns.XPText(level, xpLeft, tiLeft, tiN)
+    level, xpLeft, tiLeft, tiN = tonumber(level), tonumber(xpLeft), tonumber(tiLeft), tonumber(tiN)
+    if not (level and xpLeft) then return "" end
+    local text = ("%d%% left to %d"):format(xpLeft, level + 1)
+    if tiLeft and tiN and tiN > 0 then
+        local quests = tiN == 1 and "1 turn-in" or (tiN .. " turn-ins")
+        if tiLeft == 0 then
+            text = text .. "  \194\183  " .. "|cffffc742" .. ("enough for %d with %s"):format(level + 1, quests) .. "|r"
+        else
+            text = text .. "  \194\183  " .. ("%d%% after %s"):format(tiLeft, quests)
+        end
+    end
+    return text
 end
 
 function ns.MyStatus()
@@ -58,7 +101,7 @@ function ns.MyStatus()
     local sub = NotSecret(GetSubZoneText())
     local zone = ns.Zone()
     if sub == "" then sub = nil end
-    return {
+    local st = {
         level = UnitLevel("player"),
         zone = zone and sub and sub ~= zone and (zone .. " - " .. sub) or zone,
         class = classFile,
@@ -67,6 +110,8 @@ function ns.MyStatus()
         grouped = IsInGroup() or nil,
         xpLeft = ns.MyXPLeft(),
     }
+    st.tiLeft, st.tiN = ns.MyTurnInLeft()
+    return st
 end
 
 -------------------------------------------------------------------------------
@@ -101,7 +146,7 @@ ns.StatusChanged = StatusChanged
 for _, ev in ipairs({ "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "PLAYER_LEVEL_UP",
                       "PLAYER_FLAGS_CHANGED", "PLAYER_UPDATE_RESTING", "PLAYER_DEAD", "PLAYER_ALIVE",
                       "PLAYER_UNGHOST", "GROUP_ROSTER_UPDATE", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED",
-                      "PLAYER_XP_UPDATE" }) do
+                      "PLAYER_XP_UPDATE", "QUEST_LOG_UPDATE" }) do
     ns.On(ev, StatusChanged)
 end
 

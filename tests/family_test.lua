@@ -74,7 +74,8 @@ B.fire("PLAYER_XP_UPDATE")
 sim.Run(20)
 p = A.ns.db.peers["Thorgrim Stormfjord"]
 assert(p.xpLeft == 37, "63% done = 37% left, got " .. tostring(p.xpLeft))
-assert(A.ns.XPLeftText(p.level, p.xpLeft) == ", 37% left to 21", A.ns.XPLeftText(p.level, p.xpLeft))
+assert(A.ns.XPText(p.level, p.xpLeft) == "37% left to 21", A.ns.XPText(p.level, p.xpLeft))
+assert(p.tiLeft == nil, "no completed quests, no turn-in text")
 -- count status changes sent (heartbeats carry hw and are sent every 4 minutes anyway)
 local changes = 0
 local origSend = B.ns.Sync.SendToOnline
@@ -90,6 +91,42 @@ xp = 6400                                   -- 64%: one message
 for _ = 1, 5 do B.fire("PLAYER_XP_UPDATE") end
 sim.Run(20)
 assert(changes == 1 and p.xpLeft == 36, "one message when it changes")
+print("--- turn-ins: completed quests' XP")
+local QUESTS = {
+  { title = "Zone", isHeader = true },
+  { questID = 1, complete = true, xp = 1000 },
+  { questID = 2, complete = true, xp = 1500 },
+  { questID = 3, complete = false, xp = 5000 },  -- not done: doesn't count
+  { questID = 4, complete = true, xp = 0 },      -- no XP: doesn't count
+}
+B.env.C_QuestLog = {
+  GetNumQuestLogEntries = function() return #QUESTS end,
+  GetInfo = function(i) return QUESTS[i] end,
+  IsComplete = function(id) for _, q in ipairs(QUESTS) do if q.questID == id then return q.complete end end end,
+}
+B.env.GetQuestLogRewardXP = function(id) for _, q in ipairs(QUESTS) do if q.questID == id then return q.xp end end end
+B.fire("QUEST_LOG_UPDATE")
+sim.Run(20)
+-- 6400 + 2500 = 8900 of 10000: 11% left after 2 turn-ins
+assert(p.xpLeft == 36 and p.tiLeft == 11 and p.tiN == 2, ("got %s %s %s"):format(tostring(p.xpLeft), tostring(p.tiLeft), tostring(p.tiN)))
+assert(A.ns.XPText(p.level, p.xpLeft, p.tiLeft, p.tiN) == "36% left to 21  \194\183  11% after 2 turn-ins")
+QUESTS[5].xp = 1200                          -- quest 4 (entry 5: entry 1 is the header): now 10100, enough to level
+B.fire("QUEST_LOG_UPDATE")
+sim.Run(20)
+local bl, bn = B.ns.MyTurnInLeft()
+assert(p.tiLeft == 0 and p.tiN == 3, ("got %s %s, B says %s %s"):format(tostring(p.tiLeft), tostring(p.tiN), tostring(bl), tostring(bn)))
+assert(A.ns.XPText(p.level, p.xpLeft, p.tiLeft, p.tiN):find("enough for 21 with 3 turn-ins", 1, true))
+QUESTS[3].complete, QUESTS[5].complete = false, false  -- only quest 1 left
+B.fire("QUEST_LOG_UPDATE")
+sim.Run(20)
+assert(A.ns.XPText(p.level, p.xpLeft, p.tiLeft, p.tiN) == "36% left to 21  \194\183  26% after 1 turn-in", "singular")
+for _, q in ipairs(QUESTS) do q.complete = false end
+B.fire("QUEST_LOG_UPDATE")
+sim.Run(20)
+assert(p.tiLeft == nil and p.tiN == nil, "turn-in text goes away when nothing is complete")
+B.env.GetQuestLogRewardXP = nil              -- an API this client lacks: just no turn-ins
+assert(B.ns.TurnInXP() == 0)
+
 xp = 9999                                   -- 99.99% done still says 1% left, never 0%
 assert(B.ns.MyXPLeft() == 1)
 xp = 0
@@ -97,7 +134,7 @@ assert(B.ns.MyXPLeft() == 100)
 xpMax = 0                                   -- max level: nothing shown
 B.fire("PLAYER_XP_UPDATE")
 sim.Run(20)
-assert(p.xpLeft == nil and A.ns.XPLeftText(p.level, p.xpLeft) == "", "nothing at max level")
+assert(p.xpLeft == nil and A.ns.XPText(p.level, p.xpLeft) == "", "nothing at max level")
 local SECRET = {}
 B.env.issecretvalue = function(v) return v == SECRET end
 B.env.UnitXP = function() return SECRET end
@@ -107,4 +144,6 @@ A.ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 30, xpLeft = "junk" })
 assert(p.xpLeft == nil, "bad values from a peer are dropped")
 A.ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 30, xpLeft = 250 })
 assert(p.xpLeft == nil, "out of range values are dropped")
+A.ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 30, xpLeft = 40, tiLeft = 10, tiN = "x" })
+assert(p.xpLeft == 40 and p.tiLeft == nil and p.tiN == nil, "turn-in values must come as a valid pair")
 print("ALL OK")

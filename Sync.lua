@@ -215,6 +215,10 @@ function Sync.ApplyStatus(name, st, addonVersion)
         -- missing from older versions and at max level: then show nothing
         local xp = tonumber(st.xpLeft)
         peer.xpLeft = xp and xp >= 0 and xp <= 100 and math.floor(xp) or nil
+        local tiLeft, tiN = tonumber(st.tiLeft), tonumber(st.tiN)
+        local ok = tiLeft and tiN and tiLeft >= 0 and tiLeft <= 100 and tiN >= 1 and tiN <= 100
+        peer.tiLeft = ok and math.floor(tiLeft) or nil
+        peer.tiN = ok and math.floor(tiN) or nil
     end
     ns.Fire("PEER_STATUS", name)
 end

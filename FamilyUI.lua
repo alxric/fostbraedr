@@ -2,7 +2,7 @@
 local ADDON, ns = ...
 
 local MAX_CARDS = 8
-local CARD_H, GAP = 84, 8
+local CARD_H, GAP = 88, 8 -- 4 rows of cards must fit in the window
 
 local function ClassColor(classFile)
     if classFile then
@@ -42,15 +42,19 @@ local function CreateCard(panel)
     card.seen:SetPoint("TOPRIGHT", -10, -12)
     card.seen:SetJustifyH("RIGHT")
     card.info = T.Text(card, 11, T.colors.muted)
-    card.info:SetPoint("TOPLEFT", 12, -32)
+    card.info:SetPoint("TOPLEFT", 12, -30)
     card.info:SetPoint("RIGHT", -10, 0)
     card.info:SetWordWrap(false)
+    card.xp = T.Text(card, 11, T.colors.muted)
+    card.xp:SetPoint("TOPLEFT", card.info, "BOTTOMLEFT", 0, -3)
+    card.xp:SetPoint("RIGHT", -10, 0)
+    card.xp:SetWordWrap(false)
     card.activity = T.Text(card, 12, T.colors.text)
-    card.activity:SetPoint("TOPLEFT", card.info, "BOTTOMLEFT", 0, -4)
+    card.activity:SetPoint("TOPLEFT", card.xp, "BOTTOMLEFT", 0, -3)
     card.activity:SetPoint("RIGHT", -80, 0)
     card.activity:SetWordWrap(false)
     card.status = T.Text(card, 11, T.colors.accent)
-    card.status:SetPoint("TOPLEFT", card.activity, "BOTTOMLEFT", 0, -4)
+    card.status:SetPoint("TOPLEFT", card.activity, "BOTTOMLEFT", 0, -3)
     card.status:SetPoint("RIGHT", -80, 0)
     card.status:SetWordWrap(false)
     card.poke = T.Button(card, "Poke", 64, 22)
@@ -118,12 +122,10 @@ function ns.BuildFamilyTab(panel)
         card.name:SetText((person or first) .. on .. (isMe and T.Muted("  (you)") or ""))
         card.name:SetTextColor(ClassColor(st.class))
         local parts = {}
-        if st.level then
-            parts[#parts + 1] = "Level " .. st.level .. (ClassName(st.class) and (" " .. ClassName(st.class)) or "")
-                .. ns.XPLeftText(st.level, st.xpLeft)
-        end
+        if st.level then parts[#parts + 1] = "Level " .. st.level .. (ClassName(st.class) and (" " .. ClassName(st.class)) or "") end
         if st.zone then parts[#parts + 1] = st.zone end
         card.info:SetText(#parts > 0 and table.concat(parts, "  \194\183  ") or "Never seen with the addon")
+        card.xp:SetText(ns.XPText(st.level, st.xpLeft, st.tiLeft, st.tiN))
         if isMe or online then
             card.activity:SetText(st.activity or "")
             card.seen:SetText(isMe and "" or "online")

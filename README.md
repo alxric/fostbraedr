@@ -61,9 +61,12 @@ outside your bags.
 
 ## Family tab
 
-One card per brother: online or last seen, level and class, how much of the level is left ("Level 43 Druid, 37%
-left to 44"), zone, what he's doing and his status text. The % is sent with the status your copies already
-share, only when the whole number changes, and at most every 15 seconds. Brothers on an older version show no %.
+One card per brother: online or last seen, level, class and zone, how much of the level is left, what he's
+doing and his status text. The level line reads "37% left to 44 · 12% after 3 turn-ins": the second part
+counts the XP of completed quests waiting to be handed in, or says "enough for 44" when they'd level you
+(the game doesn't say how much the next level needs, so it can't go further). It's sent with the status your
+copies already share, only when a number changes, and at most every 15 seconds. Brothers on an older version
+show no %.
 
 ## Brothers and alts
 
