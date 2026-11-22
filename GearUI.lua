@@ -31,7 +31,7 @@ function ns.BuildGearTab(panel)
     end
 
     Section("Swap when you change form", 0)
-    Hint("One set in cat form, the other in every other form (caster, bear, travel, ...).", -22)
+    Hint("One set in cat form, the other in every other form. In combat the game doesn't let addons change gear: it swaps when the fight ends.", -22)
 
     local toggles = {}
     local function Toggle(label, y, key)
@@ -46,7 +46,7 @@ function ns.BuildGearTab(panel)
         toggles[#toggles + 1] = t
     end
     Toggle("Swap weapons (main and off hand)", -44, "weapons")
-    Toggle("Swap trinkets (the game may only allow it outside combat)", -68, "trinkets")
+    Toggle("Swap trinkets", -68, "trinkets")
 
     -- One column per set: its items, then Save / Wear now.
     local columns = {}

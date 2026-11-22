@@ -84,14 +84,25 @@ assert(worn[16] == MACE, "swapped once the cast ended")
 G.ShowLog()
 assert(A.shown:find("Can't do that while casting"), "the game's error is logged")
 
--- 4. Trinkets in combat wait for combat to end.
+-- 4. In combat addons can't equip (Forever: ADDON_ACTION_BLOCKED): don't even
+-- try, and put the whole set on when combat ends.
 d.trinkets = true
 combat = true
+local before = equips
 Shift(1) sim.Run(8)
-assert(worn[16] == DAGGER and worn[13] == TRINKET_B, "weapon swaps in combat, trinket doesn't")
+for _ = 1, 3 do A.fire("UNIT_SPELLCAST_STOP", "player") A.fire("UNIT_SPELLCAST_SUCCEEDED", "player") end
+sim.Run(2)
+assert(equips == before, "no equip calls in combat")
+assert(worn[16] == MACE and worn[13] == TRINKET_B, "nothing changes in combat")
+local waiting = 0
+for _, l in ipairs(G.log) do if l:find("in combat addons can't equip") then waiting = waiting + 1 end end
+assert(waiting == 1, "one log line per fight, got " .. waiting)
+assert(G.status:find("when combat ends"))
+G.WearNow("other")
+assert(equips == before, "wear now does nothing in combat")
 combat = false
 A.fire("PLAYER_REGEN_ENABLED") sim.Run(1)
-assert(worn[13] == TRINKET_A, "trinket swapped after combat")
+assert(worn[16] == DAGGER and worn[13] == TRINKET_A, "whole set on after combat")
 
 -- 5. Wear now: stays on until the next form change.
 G.WearNow("other") sim.Run(1)

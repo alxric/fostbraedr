@@ -66,8 +66,9 @@ The **Gear** tab keeps two sets of weapons and trinkets: one for **cat form** an
 same with your healing gear under *Every other form*, then switch on **Swap weapons** and/or **Swap trinkets**.
 From then on, changing form puts on the matching set. Each character has its own sets.
 
-If the game refuses a swap (mid-cast, or trinkets in combat), the addon tries again for a few seconds, as soon
-as your cast ends, and when combat ends. **Wear now** puts a set on straight away and keeps it on until your next
+**Not in combat:** Forever doesn't let addons change gear in combat (only a button or macro you press may), so
+a form change during a fight swaps your gear as soon as the fight ends. Out of combat, if a swap is refused,
+the addon tries again for a few seconds and when your cast ends. **Wear now** puts a set on straight away and keeps it on until your next
 form change. `/fost geartest` shows what happened on each swap: how long it took, and the global cooldown before
 and after. Other classes see a short note in the tab; nothing swaps for them.
 

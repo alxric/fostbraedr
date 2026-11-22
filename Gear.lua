@@ -2,9 +2,11 @@
 -- other in every other form (caster included). Weapons and trinkets can each be
 -- switched on or off. Every attempt is logged for /fost geartest.
 --
--- The game decides when an item may be equipped (mid-cast, in combat, on the
--- global cooldown). We just try, check shortly after, and try again when your
--- cast ends, when combat ends, and a few more times after a form change.
+-- Out of combat we just try, check shortly after, and try again when your cast
+-- ends and a few more times after a form change. In combat equipping is a
+-- protected action on Forever (ADDON_ACTION_BLOCKED, seen 2026-11-22): only a
+-- button or macro you press may do it. So in combat we don't try; the set goes
+-- on as soon as combat ends.
 local ADDON, ns = ...
 
 local G = {}
@@ -128,9 +130,12 @@ local function GCDText()
     return left and ("%.2fs"):format(left) or "?"
 end
 
+-- The global cooldown can't be read on Forever (always "?"), so it's only shown
+-- when it can.
 local function State()
-    return ("combat=%s, casting=%s, gcd left=%s"):format(tostring(InCombatLockdown() and true or false),
-        tostring(Casting() or "no"), GCDText())
+    local gcd = GCDLeft()
+    return ("combat=%s, casting=%s%s"):format(tostring(InCombatLockdown() and true or false),
+        tostring(Casting() or "no"), gcd and (", gcd left=" .. GCDText()) or "")
 end
 
 -- The last game error, so the log can show why an equip didn't happen.
@@ -191,6 +196,15 @@ function G.Apply(setKey, why, all)
     local missing = G.Missing(setKey, all)
     if #missing == 0 then return true end
     if UnitIsDeadOrGhost("player") then return false end
+    if InCombatLockdown() then
+        if not G.waitingForCombat then
+            Log(why .. ": in combat addons can't equip; swapping when combat ends")
+            G.waitingForCombat = true
+        end
+        G.status = "In combat: your " .. G.SET_TITLES[setKey]:lower() .. " set goes on when combat ends."
+        ns.Fire("GEAR_CHANGED")
+        return false
+    end
     if CursorHasItem and CursorHasItem() then
         Log(why .. ": you're holding an item on the cursor; waiting")
         return false
@@ -243,6 +257,7 @@ local function ApplyWithRetries(why)
             ns.Fire("GEAR_CHANGED")
             return
         end
+        if InCombatLockdown() then return end -- PLAYER_REGEN_ENABLED takes over
         if tries <= RETRIES then
             C_Timer.After(RETRY_EVERY, Try)
         else
@@ -258,6 +273,7 @@ G.ApplyWithRetries = ApplyWithRetries
 -- Wear a set right now (the tab's buttons; also good for testing the GCD in combat).
 function G.WearNow(setKey)
     if not (G.IsDruid() and G.Data()) then return end
+    if InCombatLockdown() then return ns.Print("Addons can't change gear in combat; try again after the fight.") end
     attempt = attempt + 1 -- stop retries for the other set
     G.hold = true
     G.Apply(setKey, "button", true)
@@ -279,7 +295,7 @@ ns.OnOptional("UPDATE_SHAPESHIFT_FORM", function()
 end)
 
 local function OnCastEnd(unit)
-    if unit ~= "player" or G.hold or not Active() then return end
+    if unit ~= "player" or G.hold or not Active() or InCombatLockdown() then return end
     local setKey = G.WantedSet()
     if setKey and #G.Missing(setKey) > 0 then ApplyWithRetries("cast ended") end
 end
@@ -289,6 +305,7 @@ for _, event in ipairs({ "UNIT_SPELLCAST_STOP", "UNIT_SPELLCAST_SUCCEEDED", "UNI
 end
 
 ns.OnOptional("PLAYER_REGEN_ENABLED", function()
+    G.waitingForCombat = false
     if G.hold or not Active() then return end
     local setKey = G.WantedSet()
     if setKey and #G.Missing(setKey) > 0 then ApplyWithRetries("combat ended") end
@@ -303,7 +320,7 @@ end)
 function G.ShowLog()
     local lines = {
         ("Gear swap log (form now: %s, druid=%s, %s)"):format(tostring(G.WantedSet()), tostring(G.IsDruid()), State()),
-        "Each line: time, what happened. 'gcd left' is the global cooldown. Kept across /reload.",
+        "Each line: time, what happened. Kept across /reload.",
         "",
     }
     for _, l in ipairs(G.log) do lines[#lines + 1] = l end
