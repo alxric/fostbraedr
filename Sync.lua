@@ -71,6 +71,7 @@ local function IsOnline(name)
     return heard[name] and (GetTime() - heard[name] < ONLINE_WINDOW)
 end
 Sync.IsOnline = IsOnline
+function Sync.SecondsSinceHeard(name) return heard[name] and GetTime() - heard[name] end
 
 -- If the character is on our friends list and offline, don't whisper it.
 local function KnownOffline(name)
@@ -250,11 +251,26 @@ end
 -------------------------------------------------------------------------------
 -- Handlers
 -------------------------------------------------------------------------------
+-- Senders we ignored, for /fost synctest: [sender as the game gave it] = { count, last, why }
+Sync.ignored = {}
+local function Ignore(sender, why)
+    local i = Sync.ignored[sender] or { count = 0 }
+    Sync.ignored[sender] = i
+    i.count, i.last, i.why = i.count + 1, GetTime(), why
+end
+
 -- Common checks: returns the sender's family name, or nil to ignore.
 local function From(sender)
     local name = ns.ResolveSender(sender)
-    if not name or IsMe(name) then return nil end
-    if not ns.People.IsKin(name) then return nil end -- brothers' characters only, never our own
+    if not name then
+        Ignore(sender, "not on the brother list or linked to a brother")
+        return nil
+    end
+    if IsMe(name) then return nil end
+    if not ns.People.IsKin(name) then -- brothers' characters only, never our own
+        Ignore(sender, "one of your own characters (" .. name .. ")")
+        return nil
+    end
     local first = not IsOnline(name)
     heard[name] = GetTime()
     if first then

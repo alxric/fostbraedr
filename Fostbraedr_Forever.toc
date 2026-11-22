@@ -2,7 +2,7 @@
 ## Title: Fostbraedr
 ## Notes: Family chronicle and rivalry tracker for brothers playing together.
 ## Author: Alexander Rickardsson
-## Version: 0.5.3
+## Version: 0.5.4
 ## SavedVariables: FostbraedrDB
 ## IconTexture: Interface\Icons\Achievement_Zone_HowlingFjord_01
 ## AddonCompartmentFunc: Fostbraedr_OnAddonCompartmentClick

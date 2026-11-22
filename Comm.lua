@@ -100,6 +100,7 @@ local function MessagingBlocked()
     return false
 end
 Comm.MessagingBlocked = MessagingBlocked
+function Comm.QueueLength() return #queue end
 
 local function IsSuccess(result)
     if result == true or result == nil then return true end -- older API: no return value / boolean
@@ -133,6 +134,10 @@ function Comm.SendNow(msg, channel, target)
     return sent and IsSuccess(result)
 end
 
+-- Counters for /fost synctest: what went out, what came in, what was dropped.
+Comm.stats = { sent = 0, retried = 0, failed = 0, received = 0, secret = 0, malformed = 0, blockedPumps = 0 }
+local stats = Comm.stats
+
 local function Pump()
     local now = GetTime()
     if now - lastRefill >= REFILL then
@@ -140,20 +145,29 @@ local function Pump()
         lastRefill = now
     end
     while #queue > 0 and tokens >= 1 do
-        if MessagingBlocked() then return end
+        if MessagingBlocked() then
+            stats.blockedPumps = stats.blockedPumps + 1
+            stats.lastBlocked = GetTime()
+            return
+        end
         local p = queue[1]
         if ns.OnBeforeSend then ns.OnBeforeSend(p.channel, p.target) end
         local called, result = pcall(C_ChatInfo.SendAddonMessage, PREFIX, p.text, p.channel, p.target)
         if called and IsSuccess(result) then
             table.remove(queue, 1)
             tokens = tokens - 1
+            stats.sent = stats.sent + 1
         elseif not called or IsRetryable(result) then
             -- blocked or throttled: keep the packet and try again later
             tokens = 0
+            stats.retried = stats.retried + 1
+            stats.lastRetry = { result = tostring(result), target = tostring(p.target), time = GetTime() }
             Debug("send blocked (%s), will retry", tostring(result))
             return
         else
             table.remove(queue, 1)
+            stats.failed = stats.failed + 1
+            stats.lastFail = { result = tostring(result), target = tostring(p.target), time = GetTime() }
             Debug("send to %s %s failed: %s", p.channel, tostring(p.target), tostring(result))
         end
     end
@@ -162,7 +176,10 @@ end
 -- Incoming
 local function OnPacket(text, channel, sender)
     local proto, id, idx, count, payload = text:match("^(%d+):(%w+):(%d+):(%d+):(.*)$")
-    if not proto then return Debug("malformed packet from %s", sender) end
+    if not proto then
+        stats.malformed = stats.malformed + 1
+        return Debug("malformed packet from %s", sender)
+    end
     if tonumber(proto) ~= PROTO then return Debug("ignoring proto %s from %s", proto, sender) end
     idx, count = tonumber(idx), tonumber(count)
     if idx < 1 or idx > count or count > 999 then return end
@@ -205,7 +222,11 @@ end
 
 ns.On("CHAT_MSG_ADDON", function(prefix, text, channel, sender)
     if ns.IsSecret(prefix) or prefix ~= PREFIX then return end
-    if ns.IsSecret(text) or ns.IsSecret(sender) or type(text) ~= "string" or type(sender) ~= "string" then return end
+    if ns.IsSecret(text) or ns.IsSecret(sender) or type(text) ~= "string" or type(sender) ~= "string" then
+        stats.secret = stats.secret + 1 -- ours, but the game hid the text or the sender's name
+        return
+    end
+    stats.received = stats.received + 1
     if Comm.debug then Debug("packet via %s from '%s' (%d bytes)", channel, sender, #text) end
     OnPacket(text, channel, sender)
 end)

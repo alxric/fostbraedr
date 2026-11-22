@@ -161,6 +161,67 @@ end
 function ns.QuestTest() RunInWindow("Quest test", QuestTestBody) end
 
 -------------------------------------------------------------------------------
+-- /fost synctest: why a brother shows as offline. A brother is "online" when his
+-- addon sent us something in the last 10 minutes; the friends list doesn't count.
+-------------------------------------------------------------------------------
+local function Ago(seconds)
+    if not seconds then return "never" end
+    if seconds < 120 then return ("%ds ago"):format(seconds) end
+    return ("%dm ago"):format(seconds / 60)
+end
+
+local function SyncTestBody(Out)
+    local Comm, Sync, s = ns.Comm, ns.Sync, ns.Comm.stats
+    local inInstance = IsInInstance()
+    Out("You: %s, addon v%s. In instance=%s, in combat=%s, chat lockdown=%s",
+        tostring(ns.me), tostring(ns.version), Show(inInstance), tostring(InCombatLockdown() and true or false),
+        tostring(C_ChatInfo.InChatMessagingLockdown and C_ChatInfo.InChatMessagingLockdown() or false))
+    Out("Sending is %s. Waiting to send: %d packet(s).", Comm.MessagingBlocked() and "PAUSED (combat, instance or lockdown)" or "on",
+        Comm.QueueLength())
+    Out("Since login: sent %d, retried %d, failed %d; received %d, dropped %d (the game hid sender or text), malformed %d",
+        s.sent, s.retried, s.failed, s.received, s.secret, s.malformed)
+    if s.lastFail then Out("Last failed send: to %s, result %s, %s", s.lastFail.target, s.lastFail.result, Ago(GetTime() - s.lastFail.time)) end
+    if s.lastRetry then Out("Last retried send: to %s, result %s, %s", s.lastRetry.target, s.lastRetry.result, Ago(GetTime() - s.lastRetry.time)) end
+    local mine = {}
+    for c in pairs(ns.db.myChars) do mine[#mine + 1] = c end
+    table.sort(mine)
+    Out("Your characters: %s", table.concat(mine, ", "))
+
+    Out("")
+    Out("BROTHERS (online = his addon was heard from in the last 10 minutes)")
+    local brothers = ns.People.Brothers()
+    if #brothers == 0 then Out("No brothers added.") end
+    for _, person in ipairs(brothers) do
+        Out("%s:", tostring(person.name))
+        for _, c in ipairs(person.chars) do
+            local friend = "not on your friends list"
+            if C_FriendList and C_FriendList.GetFriendInfo then
+                local ok, info = pcall(C_FriendList.GetFriendInfo, c)
+                if ok and type(info) == "table" then
+                    friend = ("friends list: %s as '%s'"):format(info.connected and "online" or "offline", Show(info.name))
+                end
+            end
+            local peer = ns.db.peers[c]
+            Out("  %s (%s): addon heard %s, %s; version %s, last seen %s", c, ns.IsBrother(c) and "on your list" or "linked alt",
+                Ago(Sync.SecondsSinceHeard(c)), Sync.IsOnline(c) and "ONLINE" or "offline", Show(peer and peer.version),
+                peer and peer.lastSeen and Ago(GetServerTime() - peer.lastSeen) or "never")
+            Out("      %s", friend)
+        end
+    end
+
+    Out("")
+    Out("IGNORED SENDERS (our addon's messages from names we don't recognise)")
+    local any = false
+    for sender, i in pairs(Sync.ignored) do
+        any = true
+        Out("  '%s': %d message(s), last %s: %s", sender, i.count, Ago(GetTime() - i.last), i.why)
+    end
+    if not any then Out("  none") end
+end
+
+function ns.SyncTest() RunInWindow("Sync test", SyncTestBody) end
+
+-------------------------------------------------------------------------------
 -- Helpers for /fost dump and /fost globals
 -------------------------------------------------------------------------------
 -- Compact, bounded description of any value (never touches secrets: this is

@@ -110,7 +110,9 @@ function ns.MyStatus()
         grouped = IsInGroup() or nil,
         xpLeft = ns.MyXPLeft(),
     }
-    st.tiLeft, st.tiN = ns.MyTurnInLeft()
+    -- never let the turn-in sum break the status: it goes into every hello
+    local ok, tiLeft, tiN = pcall(ns.MyTurnInLeft)
+    if ok then st.tiLeft, st.tiN = tiLeft, tiN end
     return st
 end
 

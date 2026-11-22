@@ -93,6 +93,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost stats`: your quests, gold and time so far
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
 - `/fost rolls`: read the Loot History now and show which item rolls were recorded (and why not)
+- `/fost synctest`: diagnostic, why a brother shows as offline (who was heard, friends list, ignored senders)
 - `/fost questtest`: diagnostic, shows what the game says about your quests and quest items
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read
 - `/fost dump Name[.key]`, `/fost globals text`: diagnostics, show the structure of other addons' data tables
