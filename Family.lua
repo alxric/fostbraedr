@@ -52,8 +52,9 @@ end
 
 -- Average item level of what you're wearing, or nil if it can't be read.
 -- GetAverageItemLevel() when the client has it; else worked out like the game
--- does: 16 slots (shirt and tabard don't count), ranged only if worn, and a
--- two-hander counts for the empty off hand too.
+-- does: 16 slots (shirt, tabard and the ranged/relic slot don't count), and a
+-- two-hander counts for the empty off hand too. Checked against Forever's own
+-- average on 2026-11-22 (654 / 16 = 40.875, idol left out).
 local ILVL_SLOTS = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 }
 local function SlotItemLevel(slot)
     local link = NotSecret(GetInventoryItemLink("player", slot))
@@ -72,7 +73,7 @@ function ns.MyItemLevel()
         if type(equipped) == "number" and equipped > 0 then return equipped, "GetAverageItemLevel" end
     end
     if not GetInventoryItemLink then return nil end
-    local sum, slots, any = 0, #ILVL_SLOTS, false
+    local sum, any = 0, false
     for _, slot in ipairs(ILVL_SLOTS) do
         local ilvl = SlotItemLevel(slot)
         if ilvl then sum, any = sum + ilvl, true end
@@ -83,10 +84,8 @@ function ns.MyItemLevel()
         -- 17 = two-hand (Enum.InventoryType.IndexWeapontwohandType)
         if equipLoc == 17 then sum = sum + main end
     end
-    local ranged = SlotItemLevel(18)
-    if ranged then sum, slots = sum + ranged, slots + 1 end
     if not any then return nil end
-    return sum / slots, "worked out from your slots"
+    return sum / #ILVL_SLOTS, "worked out from your slots"
 end
 
 -- XP from completed quests in the log that are waiting to be handed in, and how

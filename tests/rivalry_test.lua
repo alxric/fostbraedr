@@ -68,12 +68,16 @@ ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 12, ilvl10 = "lots" })
 assert(not ns.ComputeRivalry(nil, nil)[BRO].ilvl)
 -- without GetAverageItemLevel: worked out from the slots (16 slots; a two-hander counts twice)
 env.GetAverageItemLevel = nil
-local worn = { [1] = 30, [5] = 34, [16] = 40 }
+local worn = { [1] = 30, [5] = 34, [16] = 40, [18] = 16 } -- the ranged/relic slot doesn't count
 env.GetInventoryItemLink = function(_, slot) return worn[slot] and ("|Hitem:" .. slot .. "|h[x]|h") end
 env.C_Item = { GetDetailedItemLevelInfo = function(link) return worn[tonumber(link:match("item:(%d+)"))] end,
                GetItemInventoryTypeByID = function() return 17 end }
 local ilvl = ns.MyItemLevel()
 assert(math.abs(ilvl - (30 + 34 + 40 + 40) / 16) < 0.001, tostring(ilvl))
+-- real gear from /fost ilvltest on Forever (2026-11-22): the game said 40.875
+worn = { [1] = 49, [2] = 46, [3] = 48, [5] = 34, [6] = 36, [7] = 49, [8] = 44, [9] = 46, [10] = 38,
+         [11] = 35, [12] = 39, [13] = 50, [15] = 46, [16] = 47, [18] = 16 }  -- staff (two-hander), idol
+assert(ns.MyItemLevel() == 40.875, tostring(ns.MyItemLevel()))
 env.GetInventoryItemLink = function() return nil end
 assert(ns.MyItemLevel() == nil, "nothing worn: unknown")
 -- roll entries are hidden from the timeline (needs ChronicleUI)
