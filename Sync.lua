@@ -220,6 +220,8 @@ function Sync.ApplyStatus(name, st, addonVersion)
         local ok = tiLeft and tiN and tiLeft >= 0 and tiLeft <= 100 and tiN >= 1 and tiN <= 100
         peer.tiLeft = ok and math.floor(tiLeft) or nil
         peer.tiN = ok and math.floor(tiN) or nil
+        local ilvl10 = tonumber(st.ilvl10)
+        peer.ilvl10 = ilvl10 and ilvl10 > 0 and ilvl10 < 100000 and math.floor(ilvl10) or nil
     end
     ns.Fire("PEER_STATUS", name)
 end

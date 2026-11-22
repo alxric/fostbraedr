@@ -3,6 +3,7 @@
 -- Messages:
 --   ST   { t, st = status, hw } status changed, or 4-minute heartbeat (with hw, see Sync)
 --        st.xpLeft: whole % of this level's XP still to go (nil at max level)
+--        st.ilvl10: average item level of equipped gear x 10, as a whole number
 --        st.tiLeft, st.tiN: % left once the tiN completed quests are handed in
 --                           (0 = enough to level; both nil without completed quests)
 --   BYE  { t }                 sent at logout (or /reload), best effort
@@ -47,6 +48,45 @@ function ns.MyXPLeft()
     local xp, max = NotSecret(UnitXP("player")), NotSecret(UnitXPMax("player"))
     if type(xp) ~= "number" or type(max) ~= "number" or max <= 0 then return nil end
     return 100 - math.floor(xp * 100 / max)
+end
+
+-- Average item level of what you're wearing, or nil if it can't be read.
+-- GetAverageItemLevel() when the client has it; else worked out like the game
+-- does: 16 slots (shirt and tabard don't count), ranged only if worn, and a
+-- two-hander counts for the empty off hand too.
+local ILVL_SLOTS = { 1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17 }
+local function SlotItemLevel(slot)
+    local link = NotSecret(GetInventoryItemLink("player", slot))
+    if type(link) ~= "string" then return nil end
+    local ilvl
+    if C_Item and C_Item.GetDetailedItemLevelInfo then ilvl = NotSecret(C_Item.GetDetailedItemLevelInfo(link)) end
+    if type(ilvl) ~= "number" and C_Item and C_Item.GetItemInfo then ilvl = NotSecret((select(4, C_Item.GetItemInfo(link)))) end
+    return type(ilvl) == "number" and ilvl or nil
+end
+ns.SlotItemLevel = SlotItemLevel
+
+function ns.MyItemLevel()
+    if GetAverageItemLevel then
+        local _, equipped = GetAverageItemLevel()
+        equipped = NotSecret(equipped)
+        if type(equipped) == "number" and equipped > 0 then return equipped, "GetAverageItemLevel" end
+    end
+    if not GetInventoryItemLink then return nil end
+    local sum, slots, any = 0, #ILVL_SLOTS, false
+    for _, slot in ipairs(ILVL_SLOTS) do
+        local ilvl = SlotItemLevel(slot)
+        if ilvl then sum, any = sum + ilvl, true end
+    end
+    local main = SlotItemLevel(16)
+    if main and not GetInventoryItemLink("player", 17) then
+        local equipLoc = C_Item and C_Item.GetItemInventoryTypeByID and NotSecret(C_Item.GetItemInventoryTypeByID(GetInventoryItemLink("player", 16)))
+        -- 17 = two-hand (Enum.InventoryType.IndexWeapontwohandType)
+        if equipLoc == 17 then sum = sum + main end
+    end
+    local ranged = SlotItemLevel(18)
+    if ranged then sum, slots = sum + ranged, slots + 1 end
+    if not any then return nil end
+    return sum / slots, "worked out from your slots"
 end
 
 -- XP from completed quests in the log that are waiting to be handed in, and how
@@ -110,6 +150,8 @@ function ns.MyStatus()
         grouped = IsInGroup() or nil,
         xpLeft = ns.MyXPLeft(),
     }
+    local okIlvl, ilvl = pcall(ns.MyItemLevel)
+    if okIlvl and ilvl then st.ilvl10 = math.floor(ilvl * 10 + 0.5) end
     -- never let the turn-in sum break the status: it goes into every hello
     local ok, tiLeft, tiN = pcall(ns.MyTurnInLeft)
     if ok then st.tiLeft, st.tiN = tiLeft, tiN end
@@ -148,7 +190,7 @@ ns.StatusChanged = StatusChanged
 for _, ev in ipairs({ "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "PLAYER_LEVEL_UP",
                       "PLAYER_FLAGS_CHANGED", "PLAYER_UPDATE_RESTING", "PLAYER_DEAD", "PLAYER_ALIVE",
                       "PLAYER_UNGHOST", "GROUP_ROSTER_UPDATE", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED",
-                      "PLAYER_XP_UPDATE", "QUEST_LOG_UPDATE" }) do
+                      "PLAYER_XP_UPDATE", "QUEST_LOG_UPDATE", "PLAYER_EQUIPMENT_CHANGED" }) do
     ns.On(ev, StatusChanged)
 end
 

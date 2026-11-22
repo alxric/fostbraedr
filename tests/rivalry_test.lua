@@ -51,5 +51,30 @@ assert(all[BRO].deaths == 3)
 local last = ns.ComputeRivalry(ns.WeekStart(1), ns.WeekStart(0))
 assert(last[BRO].deaths == 0)
 assert(ns.WeekStart(0) - ns.WeekStart(1) == 7 * 86400)
+
+-- gear: my average item level (from the client) against a brother's (from his status)
+assert(not all[ME].ilvl and not ns.ComputeAwards(all).ilvl.value, "no item level known yet")
+env.GetAverageItemLevel = function() return 41.0, 39.84 end
+ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 12, ilvl10 = 413 })
+local now = ns.ComputeRivalry(ns.WeekStart(0), nil)
+assert(math.abs(now[ME].ilvl - 39.84) < 0.001 and now[BRO].ilvl == 41.3, tostring(now[BRO].ilvl))
+local gaw = ns.ComputeAwards(now)
+assert(gaw.ilvl.winners[1] == BRO and gaw.ilvl.value == 41.3, "best geared")
+assert(ns.ComputeRivalry(nil, nil)[BRO].ilvl == 41.3, "the same in every period")
+-- my status sends it as tenths, rounded
+assert(ns.MyStatus().ilvl10 == 398)
+-- bad values from a peer are dropped
+ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 12, ilvl10 = "lots" })
+assert(not ns.ComputeRivalry(nil, nil)[BRO].ilvl)
+-- without GetAverageItemLevel: worked out from the slots (16 slots; a two-hander counts twice)
+env.GetAverageItemLevel = nil
+local worn = { [1] = 30, [5] = 34, [16] = 40 }
+env.GetInventoryItemLink = function(_, slot) return worn[slot] and ("|Hitem:" .. slot .. "|h[x]|h") end
+env.C_Item = { GetDetailedItemLevelInfo = function(link) return worn[tonumber(link:match("item:(%d+)"))] end,
+               GetItemInventoryTypeByID = function() return 17 end }
+local ilvl = ns.MyItemLevel()
+assert(math.abs(ilvl - (30 + 34 + 40 + 40) / 16) < 0.001, tostring(ilvl))
+env.GetInventoryItemLink = function() return nil end
+assert(ns.MyItemLevel() == nil, "nothing worn: unknown")
 -- roll entries are hidden from the timeline (needs ChronicleUI)
 print("ALL OK")

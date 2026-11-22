@@ -8,11 +8,11 @@ local PERIODS = {
 }
 
 local COLUMNS = {
-    { title = "Name",    width = 90,  get = function(_, s) return s.name end, left = true },
+    { title = "Name",    width = 80,  get = function(_, s) return s.name end, left = true },
     { title = "Lvl",     width = 30,  get = function(_, s) return s.level or "-" end },
     { title = "Deaths",  width = 48,  get = function(_, s) return s.deaths end },
     { title = "Quests",  width = 48,  get = function(_, s) return s.quests end },
-    { title = "Gold",    width = 62,  get = function(_, s) return ns.ShortMoney(s.gold) end },
+    { title = "Gold",    width = 54,  get = function(_, s) return ns.ShortMoney(s.gold) end },
     { title = "Bosses",  width = 46,  get = function(_, s) return s.bosses end },
     { title = "Epics",   width = 40,  get = function(_, s) return s.loot end, tip = "Epic or better items, and mounts" },
     { title = "Luck",    width = 46,  get = function(_, s) return s.luck and ("%.0f"):format(s.luck) or "-" end,
@@ -21,6 +21,8 @@ local COLUMNS = {
     { title = "Played",  width = 52,  get = function(_, s) return ns.ShortTime(s.minutes) end },
     { title = "Together", width = 60, get = function(_, s) return ns.ShortTime(s.together) end,
       tip = "Time played grouped with a brother" },
+    { title = "iLvl",    width = 36,  get = function(_, s) return s.ilvl and ("%.1f"):format(s.ilvl) or "-" end,
+      tip = "Average item level of equipped gear, right now (the same in every period)" },
 }
 
 function ns.ShortMoney(copper)
@@ -111,7 +113,8 @@ function ns.BuildRivalryTab(panel)
     panel:SetScript("OnSizeChanged", LayoutCards)
 
     -- Leaderboard.
-    local tableTop = CARDS_TOP - 2 * (CARD_H + GAP) - 10
+    local cardRows = math.ceil(#ns.AWARDS / 3)
+    local tableTop = CARDS_TOP - cardRows * (CARD_H + GAP) - 10
     local header = CreateFrame("Frame", nil, panel)
     header:SetPoint("TOPLEFT", 0, tableTop)
     header:SetPoint("RIGHT", panel, "RIGHT")
@@ -129,7 +132,7 @@ function ns.BuildRivalryTab(panel)
             fs:SetJustifyH(c.left and "LEFT" or "RIGHT")
             fs:SetWordWrap(false)
             cells[i] = fs
-            x = x + c.width + 2
+            x = x + c.width + 1 -- 12 columns must fit the window
         end
         return cells
     end

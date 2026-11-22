@@ -59,6 +59,14 @@ a chain; only items that start a quest have a level. Before deleting a leftover 
 questing in, check it yourself. Nothing is deleted for you: click a row to pick the item up, then drop it
 outside your bags.
 
+## Gear in Rivalry
+
+The Rivalry leaderboard has an **iLvl** column, the average item level of what each of you is wearing, and a
+**Best Geared** award. It's what you wear now, so it's the same in every period. Someone with several characters
+counts with his highest-level one. Item level is the only fair yardstick the game gives addons (which item is
+better for a class is another question), and while levelling, the higher-level brother usually wins.
+`/fost ilvltest` shows the item level of each of your slots as the game reports it.
+
 ## Family tab
 
 One card per brother: online or last seen, level, class and zone, how much of the level is left, what he's
@@ -93,6 +101,7 @@ person (`/fost name`, or Settings), and defaults to the first name of their firs
 - `/fost stats`: your quests, gold and time so far
 - `/fost lootquality N`: lowest item quality recorded as notable loot (default 4 = epic; mounts always)
 - `/fost rolls`: read the Loot History now and show which item rolls were recorded (and why not)
+- `/fost ilvltest`: diagnostic, the item levels of your gear as Rivalry sees them
 - `/fost synctest`: diagnostic, why a brother shows as offline (who was heard, friends list, ignored senders)
 - `/fost questtest`: diagnostic, shows what the game says about your quests and quest items
 - `/fost loottest`: diagnostic, prints what the game's Loot History lets addons read

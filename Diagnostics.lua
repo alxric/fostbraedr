@@ -222,6 +222,41 @@ end
 function ns.SyncTest() RunInWindow("Sync test", SyncTestBody) end
 
 -------------------------------------------------------------------------------
+-- /fost ilvltest: what the game says about your equipped gear's item levels
+-- (quest items all report 1 on Forever, so check gear before trusting it).
+-------------------------------------------------------------------------------
+local SLOT_NAMES = { "Head", "Neck", "Shoulder", "Shirt", "Chest", "Waist", "Legs", "Feet", "Wrist", "Hands",
+    "Finger 1", "Finger 2", "Trinket 1", "Trinket 2", "Back", "Main hand", "Off hand", "Ranged", "Tabard" }
+
+local function IlvlTestBody(Out)
+    if GetAverageItemLevel then
+        local overall, equipped = GetAverageItemLevel()
+        Out("GetAverageItemLevel: overall %s, equipped %s", Show(overall), Show(equipped))
+    else
+        Out("GetAverageItemLevel doesn't exist in this client.")
+    end
+    Out("C_Item.GetDetailedItemLevelInfo=%s, C_Item.GetItemInfo=%s", tostring(C_Item and C_Item.GetDetailedItemLevelInfo ~= nil),
+        tostring(C_Item and C_Item.GetItemInfo ~= nil))
+    Out("")
+    for slot = 1, 19 do
+        local link = GetInventoryItemLink("player", slot)
+        if link then
+            local detailed = C_Item and C_Item.GetDetailedItemLevelInfo and C_Item.GetDetailedItemLevelInfo(link)
+            local info = C_Item and C_Item.GetItemInfo and select(4, C_Item.GetItemInfo(link))
+            Out("%-9s %s: detailed %s, item info %s", SLOT_NAMES[slot], Show(link), Show(detailed), Show(info))
+        else
+            Out("%-9s (empty)", SLOT_NAMES[slot])
+        end
+    end
+    local ilvl, source = ns.MyItemLevel()
+    Out("")
+    Out("Rivalry uses: %s (%s); your status sends %s", ilvl and ("%.1f"):format(ilvl) or "nothing", tostring(source),
+        Show(ns.MyStatus().ilvl10))
+end
+
+function ns.IlvlTest() RunInWindow("Item level test", IlvlTestBody) end
+
+-------------------------------------------------------------------------------
 -- Helpers for /fost dump and /fost globals
 -------------------------------------------------------------------------------
 -- Compact, bounded description of any value (never touches secrets: this is

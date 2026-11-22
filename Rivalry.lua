@@ -135,14 +135,27 @@ function ns.ComputeRivalry(from, to)
             s[f] = s[f] + (ns.db.pending[f] or 0)
         end
     end
+    -- Gear is what they wear now, not per period. Someone with several characters
+    -- counts with his highest-level one (ties: the better geared).
+    local function Gear(char, ilvl, level)
+        if type(ilvl) ~= "number" then return end
+        local s = S(char)
+        level = tonumber(level) or 0
+        if not s.ilvl or level > s.ilvlFrom or (level == s.ilvlFrom and ilvl > s.ilvl) then
+            s.ilvl, s.ilvlFrom = ilvl, level
+        end
+    end
     -- brothers and me always listed, even with nothing this period
     if ns.me then
         Level(ns.me, UnitLevel("player"))
         S(ns.me).isMe = true
+        local ok, ilvl = pcall(ns.MyItemLevel)
+        if ok then Gear(ns.me, ilvl, UnitLevel("player")) end
     end
     for _, c in ipairs(P.KinChars()) do
         local peer = ns.db.peers[c]
         Level(c, peer and peer.level)
+        if peer and peer.ilvl10 then Gear(c, peer.ilvl10 / 10, peer.level) end
     end
 
     local keys = {}
@@ -168,6 +181,8 @@ ns.AWARDS = {
       fmt = function(v) return v .. (v == 1 and " item roll won" or " item rolls won") end },
     { key = "bosses",   title = "Boss Slayer",   icon = "Interface\\Icons\\INV_Sword_04",
       fmt = function(v) return v .. (v == 1 and " boss" or " bosses") end },
+    { key = "ilvl",     title = "Best Geared",   icon = "Interface\\Icons\\INV_Chest_Plate04",
+      fmt = function(v) return ("%.1f avg item level, now"):format(v) end },
 }
 
 -- Returns { [award.key] = { winners = {statsKey, ...}, value = v } } (winners empty if nobody).

@@ -298,6 +298,7 @@ commands.help = function()
     print("  /fost pokes - receiving pokes on/off")
     print("  /fost stats - your quests, gold and time so far")
     print("  /fost questtest - what the game tells us about your quests and quest items")
+    print("  /fost ilvltest - item levels of your gear, as Rivalry sees them")
     print("  /fost synctest - why a brother shows as offline")
     print("  /fost lootquality N - loot quality to record (4 = epic)")
     print("  /fost version")
@@ -418,6 +419,11 @@ end
 commands.synctest = function()
     local ok, err = pcall(ns.SyncTest)
     if not ok then ns.Print("Sync test failed: %s", tostring(err)) end
+end
+
+commands.ilvltest = function()
+    local ok, err = pcall(ns.IlvlTest)
+    if not ok then ns.Print("Item level test failed: %s", tostring(err)) end
 end
 
 commands.dump = function(rest)

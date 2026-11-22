@@ -26,4 +26,12 @@ assert(shown:find("received %d+") and shown:find("Sending is on"), "counters")
 A.instance = "The Deadmines"
 A.env.SlashCmdList.FOSTBRAEDR("synctest")
 assert(shown:find("PAUSED"), "paused sending shown")
+-- /fost ilvltest opens its window with and without the game's average
+A.env.GetInventoryItemLink = function(_, slot) return slot == 16 and "|Hitem:5|h[Stick]|h" or nil end
+A.env.C_Item = { GetDetailedItemLevelInfo = function() return 40 end }
+A.env.SlashCmdList.FOSTBRAEDR("ilvltest")
+assert(shown:find("Main hand") and shown:find("detailed 40") and shown:find("Rivalry uses: 2.5"), shown)
+A.env.GetAverageItemLevel = function() return 42, 41.5 end
+A.env.SlashCmdList.FOSTBRAEDR("ilvltest")
+assert(shown:find("equipped 41.5") and shown:find("Rivalry uses: 41.5 %(GetAverageItemLevel%); your status sends 415"))
 print("ALL OK")
