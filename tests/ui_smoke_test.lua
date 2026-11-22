@@ -47,7 +47,7 @@ env.C_DateAndTime = { GetSecondsUntilWeeklyReset = function() return 86400 end }
 env.PlaySoundFile = function() return false end
 env.RAID_CLASS_COLORS = { WARRIOR = { r = 0.78, g = 0.61, b = 0.43 } }
 env.LOCALIZED_CLASS_NAMES_MALE = { WARRIOR = "Warrior" }
-for _, f in ipairs({ "QuestItems.lua", "Gear.lua", "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "NamesUI.lua", "QuestItemsUI.lua", "GearUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
+for _, f in ipairs({ "QuestItems.lua", "Theme.lua", "Toast.lua", "UI.lua", "ChronicleUI.lua", "RivalryUI.lua", "FamilyUI.lua", "NamesUI.lua", "QuestItemsUI.lua", "SettingsUI.lua", "Minimap.lua" }) do
     local ch = assert(loadfile("./" .. f)); setfenv(ch, env); ch("Fostbraedr", ns)
 end
 A.fire("PLAYER_LOGIN")
@@ -121,22 +121,6 @@ for _, r in ipairs(qrows) do
     rowFrame.scripts.OnClick(rowFrame)
     rowFrame.scripts.OnLeave(rowFrame)
 end
--- gear tab: as a warrior (note only), then as a druid with and without saved sets
-local gear
-for _, tab in ipairs(frame.tabs) do if tab.def.key == "gear" then gear = tab end end
-assert(gear, "gear tab missing")
-gear.panel:Refresh()
-env.UnitClass = function() return "Druid", "DRUID" end
-ns.Gear.ForgetClass()
-env.GetShapeshiftFormID = function() return 1 end
-gear.panel:Refresh()
-env.GetInventoryItemID = function(_, slot) return slot == 16 and 101 or nil end
-env.GetInventoryItemLink = function() return "|Hitem:101|h[Dagger]|h" end
-ns.Gear.SaveCurrent("cat")
-gear.panel:Refresh()
-ns.Fire("GEAR_CHANGED")
-env.UnitClass = function() return "Warrior", "WARRIOR" end
-ns.Gear.ForgetClass()
 -- copyable text window
 ns.ShowTextWindow("Test", "line 1\n|cnIQ4:|Hitem:5::::|h[X]|h|r | y")
 ns.ShowTextWindow("Again", "reuse")
