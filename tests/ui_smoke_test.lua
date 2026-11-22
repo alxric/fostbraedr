@@ -82,7 +82,7 @@ for i, tab in ipairs(frame.tabs) do
     if tab.panel.Refresh then tab.panel:Refresh() end
 end
 -- family tab with a known peer
-ns.db.peers["Thorgrim Stormfjord"] = { level = 22, zone = "Westfall", class = "WARRIOR", activity = "Questing", status = "afk soon", lastSeen = env.GetServerTime() - 4000 }
+ns.db.peers["Thorgrim Stormfjord"] = { level = 22, xpLeft = 37, zone = "Westfall", class = "WARRIOR", activity = "Questing", status = "afk soon", lastSeen = env.GetServerTime() - 4000 }
 frame.tabs[3].panel:Refresh()
 ns.Fire("PEER_STATUS", "Thorgrim Stormfjord")
 -- toasts: show five (max 4 visible), animate, click one

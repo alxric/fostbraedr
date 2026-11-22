@@ -59,6 +59,12 @@ a chain; only items that start a quest have a level. Before deleting a leftover 
 questing in, check it yourself. Nothing is deleted for you: click a row to pick the item up, then drop it
 outside your bags.
 
+## Family tab
+
+One card per brother: online or last seen, level and class, how much of the level is left ("Level 43 Druid, 37%
+left to 44"), zone, what he's doing and his status text. The % is sent with the status your copies already
+share, only when the whole number changes, and at most every 15 seconds. Brothers on an older version show no %.
+
 ## Brothers and alts
 
 Add **one character per brother** (Settings tab, or `/fost brother add`). When his addon says hello it

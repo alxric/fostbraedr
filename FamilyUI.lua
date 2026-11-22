@@ -118,7 +118,10 @@ function ns.BuildFamilyTab(panel)
         card.name:SetText((person or first) .. on .. (isMe and T.Muted("  (you)") or ""))
         card.name:SetTextColor(ClassColor(st.class))
         local parts = {}
-        if st.level then parts[#parts + 1] = "Level " .. st.level .. (ClassName(st.class) and (" " .. ClassName(st.class)) or "") end
+        if st.level then
+            parts[#parts + 1] = "Level " .. st.level .. (ClassName(st.class) and (" " .. ClassName(st.class)) or "")
+                .. ns.XPLeftText(st.level, st.xpLeft)
+        end
         if st.zone then parts[#parts + 1] = st.zone end
         card.info:SetText(#parts > 0 and table.concat(parts, "  \194\183  ") or "Never seen with the addon")
         if isMe or online then

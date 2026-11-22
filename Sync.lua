@@ -212,6 +212,9 @@ function Sync.ApplyStatus(name, st, addonVersion)
             peer[k] = type(v) == "string" and v:sub(1, 120) or nil
         end
         peer.grouped = st.grouped == true or nil
+        -- missing from older versions and at max level: then show nothing
+        local xp = tonumber(st.xpLeft)
+        peer.xpLeft = xp and xp >= 0 and xp <= 100 and math.floor(xp) or nil
     end
     ns.Fire("PEER_STATUS", name)
 end

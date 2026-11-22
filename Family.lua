@@ -2,6 +2,7 @@
 --
 -- Messages:
 --   ST   { t, st = status, hw } status changed, or 4-minute heartbeat (with hw, see Sync)
+--        st.xpLeft: whole % of this level's XP still to go (nil at max level)
 --   BYE  { t }                 sent at logout (or /reload), best effort
 --   POKE { t, m }              optional short message
 local ADDON, ns = ...
@@ -37,6 +38,21 @@ function ns.MyActivity()
     return "Out in the world"
 end
 
+-- Whole % of this level's XP still to go, 1-100; nil at max level or unreadable.
+-- Worked out from the % done, rounded down, so it never says 0% before you ding.
+function ns.MyXPLeft()
+    if not (UnitXP and UnitXPMax) then return nil end
+    local xp, max = NotSecret(UnitXP("player")), NotSecret(UnitXPMax("player"))
+    if type(xp) ~= "number" or type(max) ~= "number" or max <= 0 then return nil end
+    return 100 - math.floor(xp * 100 / max)
+end
+
+-- ", 37% left to 44" for the Family tab, or "" when unknown.
+function ns.XPLeftText(level, xpLeft)
+    if not (tonumber(level) and tonumber(xpLeft)) then return "" end
+    return (", %d%% left to %d"):format(xpLeft, level + 1)
+end
+
 function ns.MyStatus()
     local _, classFile = UnitClass("player")
     local sub = NotSecret(GetSubZoneText())
@@ -49,6 +65,7 @@ function ns.MyStatus()
         activity = ns.MyActivity(),
         status = ns.db.settings.status,
         grouped = IsInGroup() or nil,
+        xpLeft = ns.MyXPLeft(),
     }
 end
 
@@ -83,7 +100,8 @@ ns.StatusChanged = StatusChanged
 
 for _, ev in ipairs({ "ZONE_CHANGED_NEW_AREA", "ZONE_CHANGED", "ZONE_CHANGED_INDOORS", "PLAYER_LEVEL_UP",
                       "PLAYER_FLAGS_CHANGED", "PLAYER_UPDATE_RESTING", "PLAYER_DEAD", "PLAYER_ALIVE",
-                      "PLAYER_UNGHOST", "GROUP_ROSTER_UPDATE", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED" }) do
+                      "PLAYER_UNGHOST", "GROUP_ROSTER_UPDATE", "PLAYER_CONTROL_LOST", "PLAYER_CONTROL_GAINED",
+                      "PLAYER_XP_UPDATE" }) do
     ns.On(ev, StatusChanged)
 end
 

@@ -65,4 +65,46 @@ assert(A.ns.FindBrotherByPrefix("Thorgrim Stormfjord hi there") == "Thorgrim Sto
 local n, m = A.ns.FindBrotherByPrefix("thorgrim hi there")
 assert(n == "Thorgrim Stormfjord" and m == "hi there", tostring(m))
 assert(A.ns.FindBrotherByPrefix("Nobody hi") == nil)
+
+print("--- % left to next level reaches the brother, only when it changes")
+local xp, xpMax = 6300, 10000
+B.env.UnitXP = function() return xp end
+B.env.UnitXPMax = function() return xpMax end
+B.fire("PLAYER_XP_UPDATE")
+sim.Run(20)
+p = A.ns.db.peers["Thorgrim Stormfjord"]
+assert(p.xpLeft == 37, "63% done = 37% left, got " .. tostring(p.xpLeft))
+assert(A.ns.XPLeftText(p.level, p.xpLeft) == ", 37% left to 21", A.ns.XPLeftText(p.level, p.xpLeft))
+-- count status changes sent (heartbeats carry hw and are sent every 4 minutes anyway)
+local changes = 0
+local origSend = B.ns.Sync.SendToOnline
+B.ns.Sync.SendToOnline = function(msg, ...)
+  if msg.t == "ST" and not msg.hw then changes = changes + 1 end
+  return origSend(msg, ...)
+end
+xp = 6350                                   -- still 63%: nothing new to send
+for _ = 1, 5 do B.fire("PLAYER_XP_UPDATE") end
+sim.Run(20)
+assert(changes == 0, "no message when the whole % is unchanged, got " .. changes)
+xp = 6400                                   -- 64%: one message
+for _ = 1, 5 do B.fire("PLAYER_XP_UPDATE") end
+sim.Run(20)
+assert(changes == 1 and p.xpLeft == 36, "one message when it changes")
+xp = 9999                                   -- 99.99% done still says 1% left, never 0%
+assert(B.ns.MyXPLeft() == 1)
+xp = 0
+assert(B.ns.MyXPLeft() == 100)
+xpMax = 0                                   -- max level: nothing shown
+B.fire("PLAYER_XP_UPDATE")
+sim.Run(20)
+assert(p.xpLeft == nil and A.ns.XPLeftText(p.level, p.xpLeft) == "", "nothing at max level")
+local SECRET = {}
+B.env.issecretvalue = function(v) return v == SECRET end
+B.env.UnitXP = function() return SECRET end
+xpMax = 100
+assert(B.ns.MyXPLeft() == nil, "secret XP is ignored")
+A.ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 30, xpLeft = "junk" })
+assert(p.xpLeft == nil, "bad values from a peer are dropped")
+A.ns.Sync.ApplyStatus("Thorgrim Stormfjord", { level = 30, xpLeft = 250 })
+assert(p.xpLeft == nil, "out of range values are dropped")
 print("ALL OK")
